@@ -1,3 +1,4 @@
+// components/BarcodeScanner.tsx
 "use client";
 
 import React from "react";
@@ -10,19 +11,40 @@ interface BarcodeScannerProps {
 }
 
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
+  // Use a ref to track the last successful scan to prevent immediate re-scans
+  const lastScannedRef = React.useRef<string | null>(null);
+
   const handleScan = (detectedCodes: IDetectedBarcode[]) => {
     if (detectedCodes && detectedCodes.length > 0) {
-      // Assuming the barcode is the rawValue of the first detected code
       const barcode = detectedCodes[0].rawValue;
+
+      // Implement a simple throttle mechanism
+      if (lastScannedRef.current === barcode) {
+        return;
+      }
+
+      // Perform the scan action
       onScan(barcode);
+      lastScannedRef.current = barcode; // Set the current successful scan
+
+      // Clear the ref after a brief pause so the same item can be scanned again if needed
+      setTimeout(() => {
+        lastScannedRef.current = null;
+      }, 1000); // Allow re-scan after 1 second
     }
   };
 
   const handleError = (error: unknown) => {
     console.error("Scanner Error:", error);
-    onError(
-      "Camera error. Please ensure permissions are granted and you are on HTTPS."
-    );
+    // Only show a critical error to the user once
+    if (
+      error instanceof Error &&
+      (error.name === "NotAllowedError" || error.name === "NotFoundError")
+    ) {
+      onError(
+        "Camera access denied or not found. Check permissions and device."
+      );
+    }
   };
 
   return (
@@ -30,16 +52,16 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
       style={{
         position: "relative",
         width: "100%",
-        maxWidth: "300px",
+        maxWidth: "350px",
         margin: "0 auto",
-        border: "2px solid #3b82f6",
-        borderRadius: "8px",
+        border: "3px solid #3b82f6",
+        borderRadius: "12px",
         overflow: "hidden",
       }}
     >
       <div
         style={{
-          padding: "0.5rem",
+          padding: "0.75rem",
           backgroundColor: "#3b82f6",
           color: "white",
           textAlign: "center",
@@ -49,16 +71,20 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
           gap: "8px",
         }}
       >
-        <Camera size={16} /> QR Scanner
+        <Camera size={18} /> Point of Sale Scanner
       </div>
       <Scanner
         onScan={handleScan}
         onError={handleError}
-        formats={["qr_code"]} // Focus on QR codes (which your barcodes are)
-        allowMultiple={false} // Only process one code at a time
-        scanDelay={500} // Half-second delay between scans
+        formats={["qr_code"]}
+        allowMultiple={false}
+        scanDelay={200}
+        components={{
+          finder: true,
+          onOff: true,
+        }}
         styles={{
-          container: { width: "100%", height: "auto", paddingTop: "100%" }, // 1:1 aspect ratio container
+          container: { width: "100%", height: "auto", paddingTop: "100%" },
           video: {
             position: "absolute",
             top: 0,
