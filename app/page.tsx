@@ -60,7 +60,7 @@ function LoginForm({
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Clothing Shop System</h1>
+          <h1 className={styles.title}>Yomo Shop System</h1>
           <p className={styles.subtitle}>Enter your access code to continue</p>
         </div>
 
@@ -83,11 +83,7 @@ function LoginForm({
 
           {error && <div className={styles.error}>{error}</div>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={styles.button}
-          >
+          <button type="submit" disabled={loading} className={styles.button}>
             {loading ? "Verifying..." : "Login"}
           </button>
         </form>
