@@ -13,7 +13,6 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import {
-  Package,
   ShoppingCart,
   Loader2,
   Minus,

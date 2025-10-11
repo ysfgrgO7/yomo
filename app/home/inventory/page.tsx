@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import styles from "@/app/styles.module.css";
 import { db, auth } from "../../../lib/firebase";
 import {
@@ -342,23 +342,6 @@ export default function InventoryPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Helper function to convert SVG to canvas (KEEPING FOR COMPLETENESS, NO CHANGE)
-  const svgToCanvas = (svgElement: SVGSVGElement): HTMLCanvasElement => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const svgString = new XMLSerializer().serializeToString(svgElement);
-    const svg = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(svg);
-
-    canvas.width = 70;
-    canvas.height = 70;
-
-    const img = new Image();
-    img.src = url;
-
-    return canvas;
   };
 
   // Generate PDF for a specific item with multiple QR codes based on quantity (KEEPING FOR COMPLETENESS, NO CHANGE)
