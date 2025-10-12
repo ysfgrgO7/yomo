@@ -142,7 +142,7 @@ export default function POSPage() {
       }
     });
 
-    setTimeout(() => setLastScan(null), 500);
+    setTimeout(() => setLastScan(null), 200);
     setError(null);
   };
 
