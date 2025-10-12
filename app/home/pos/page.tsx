@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   CreditCard,
   DollarSign,
+  Printer,
 } from "lucide-react";
 
 interface Item {
