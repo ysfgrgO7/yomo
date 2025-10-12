@@ -10,26 +10,10 @@ interface BarcodeScannerProps {
 }
 
 const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
-  const lastScannedRef = React.useRef<{
-    barcode: string;
-    timestamp: number;
-  } | null>(null);
-
   const handleScan = (detectedCodes: IDetectedBarcode[]) => {
     if (detectedCodes && detectedCodes.length > 0) {
       const barcode = detectedCodes[0].rawValue;
-      const now = Date.now();
-
-      // Only prevent duplicate scans within 400ms to avoid accidental double-scans
-      if (
-        lastScannedRef.current?.barcode === barcode &&
-        now - lastScannedRef.current.timestamp < 100
-      ) {
-        return;
-      }
-
       onScan(barcode);
-      lastScannedRef.current = { barcode, timestamp: now };
     }
   };
 
