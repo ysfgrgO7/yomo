@@ -54,7 +54,6 @@ export default function POSPage() {
   const [checkoutStatus, setCheckoutStatus] = useState<
     "idle" | "processing" | "success" | "failure"
   >("idle");
-  const [lastScan, setLastScan] = useState<string | null>(null);
   const [showCart, setShowCart] = useState(false);
 
   useEffect(() => {
@@ -142,7 +141,6 @@ export default function POSPage() {
       }
     });
 
-    setTimeout(() => setLastScan(null), 200);
     setError(null);
   };
 
