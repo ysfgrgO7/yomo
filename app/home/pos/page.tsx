@@ -23,6 +23,7 @@ import {
   CreditCard,
   DollarSign,
   Printer,
+  Keyboard,
 } from "lucide-react";
 
 interface Item {
@@ -51,11 +52,12 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scannerActive, setScannerActive] = useState(true);
   const [checkoutStatus, setCheckoutStatus] = useState<
     "idle" | "processing" | "success" | "failure"
   >("idle");
   const [showCart, setShowCart] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualBarcode, setManualBarcode] = useState("");
 
   useEffect(() => {
     if (db) {
@@ -93,8 +95,18 @@ export default function POSPage() {
     }
   }, []);
 
+  // Manual Entry Handler
+  const handleManualEntry = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualBarcode.trim()) {
+      handleScan(manualBarcode.trim());
+      setManualBarcode("");
+      setShowManualEntry(false);
+    }
+  };
+
   const handleScan = (barcode: string) => {
-    if (!scannerActive || checkoutStatus === "processing") return;
+    if (checkoutStatus === "processing") return;
 
     const itemToAdd = inventory.find((item) => item.barcode === barcode);
 
@@ -189,6 +201,136 @@ export default function POSPage() {
     return cart.reduce((total, item) => total + item.subtotal, 0);
   }, [cart]);
 
+  // Generate Invoice PDF
+  const generateInvoicePDF = () => {
+    if (cart.length === 0) return;
+
+    const invoiceDate = new Date().toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const invoiceHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Invoice</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 20px;
+          }
+          .header h1 {
+            color: #3b82f6;
+            margin: 0;
+          }
+          .invoice-info {
+            margin-bottom: 30px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+          }
+          th {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+          }
+          td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+          }
+          .text-right {
+            text-align: right;
+          }
+          .total-row {
+            font-weight: bold;
+            font-size: 1.2em;
+            background-color: #f3f4f6;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SALES INVOICE</h1>
+          <p>Yomo Store</p>
+        </div>
+        
+        <div class="invoice-info">
+          <p><strong>Date:</strong> ${invoiceDate}</p>
+          <p><strong>Invoice #:</strong> INV-${Date.now()}</p>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Price</th>
+              <th class="text-right">Quantity</th>
+              <th class="text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${cart
+              .map(
+                (item) => `
+              <tr>
+                <td>${item.name}</td>
+                <td>${item.price.toFixed(2)} EGP</td>
+                <td class="text-right">${item.cartQuantity}</td>
+                <td class="text-right">${item.subtotal.toFixed(2)} EGP</td>
+              </tr>
+            `
+              )
+              .join("")}
+            <tr class="total-row">
+              <td colspan="3" class="text-right">TOTAL:</td>
+              <td class="text-right">${cartTotal.toFixed(2)} EGP</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <p>Terms and Conditions</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(invoiceHTML);
+      printWindow.document.close();
+      printWindow.focus();
+
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+  };
+
   const handleCheckout = async () => {
     if (cart.length === 0) {
       setError("Cart is empty. Please scan items.");
@@ -226,6 +368,7 @@ export default function POSPage() {
 
     if (results.every((r) => r === true)) {
       setCheckoutStatus("success");
+      generateInvoicePDF();
       setCart([]);
       setTimeout(() => setCheckoutStatus("idle"), 3000);
     } else {
@@ -315,6 +458,30 @@ export default function POSPage() {
             {cart.length}
           </span>
         )}
+      </button>
+
+      {/* Floating Manual Entry Button */}
+      <button
+        onClick={() => setShowManualEntry(true)}
+        style={{
+          position: "fixed",
+          bottom: "2rem",
+          right: "7rem",
+          width: "70px",
+          height: "70px",
+          borderRadius: "50%",
+          backgroundColor: "#8b5cf6",
+          color: "white",
+          border: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          zIndex: 999,
+        }}
+      >
+        <Keyboard size={28} />
       </button>
 
       {/* Error/Success Toast */}
@@ -606,6 +773,7 @@ export default function POSPage() {
                   justifyContent: "center",
                   gap: "0.5rem",
                   fontWeight: "bold",
+                  marginBottom: "0.75rem",
                 }}
               >
                 {checkoutStatus === "processing" ? (
@@ -615,11 +783,149 @@ export default function POSPage() {
                   </>
                 ) : (
                   <>
-                    <CreditCard /> Process Payment
+                    <CreditCard /> Process Payment & Print
                   </>
                 )}
               </button>
+
+              <button
+                onClick={generateInvoicePDF}
+                disabled={cart.length === 0}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  fontSize: "1rem",
+                  backgroundColor: cart.length === 0 ? "#e5e7eb" : "#3b82f6",
+                  color: cart.length === 0 ? "#9ca3af" : "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: cart.length === 0 ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  fontWeight: "bold",
+                }}
+              >
+                <Printer size={18} /> Preview Invoice
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Entry Popup */}
+      {showManualEntry && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "1rem",
+          }}
+          onClick={() => setShowManualEntry(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              maxWidth: "400px",
+              width: "100%",
+              padding: "2rem",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <Keyboard /> Manual Entry
+              </h2>
+              <button
+                onClick={() => setShowManualEntry(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0.5rem",
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleManualEntry}>
+              <div style={{ marginBottom: "1rem" }}>
+                <label
+                  htmlFor="barcode-input"
+                  style={{
+                    display: "block",
+                    marginBottom: "0.5rem",
+                    fontWeight: "bold",
+                    color: "#374151",
+                  }}
+                >
+                  Enter Barcode/QR Code:
+                </label>
+                <input
+                  id="barcode-input"
+                  type="text"
+                  value={manualBarcode}
+                  onChange={(e) => setManualBarcode(e.target.value)}
+                  autoFocus
+                  placeholder="Type or paste code here"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    fontSize: "1rem",
+                    border: "2px solid #d1d5db",
+                    borderRadius: "8px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#3b82f6")}
+                  onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!manualBarcode.trim()}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  fontSize: "1rem",
+                  backgroundColor: manualBarcode.trim() ? "#10b981" : "#9ca3af",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: manualBarcode.trim() ? "pointer" : "not-allowed",
+                  fontWeight: "bold",
+                }}
+              >
+                Add to Cart
+              </button>
+            </form>
           </div>
         </div>
       )}

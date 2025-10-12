@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Yomo shop system",
   description: "Yomo system for shop management",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
