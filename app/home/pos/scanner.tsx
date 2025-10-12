@@ -23,7 +23,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
       // Only prevent duplicate scans within 400ms to avoid accidental double-scans
       if (
         lastScannedRef.current?.barcode === barcode &&
-        now - lastScannedRef.current.timestamp < 400
+        now - lastScannedRef.current.timestamp < 100
       ) {
         return;
       }
