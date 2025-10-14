@@ -315,7 +315,6 @@ export default function InventoryPage() {
       total: updatedTotal,
       sold: updatedSold,
       quantity: updatedAvailable,
-      createdAt: originalItem.createdAt || new Date().toISOString(),
     };
 
     if (
