@@ -251,24 +251,76 @@ export default function InventoryPage() {
     });
   };
 
+  // const handleUpdateItem = async (itemId: string) => {
+  //   const currentCategory = editFormData.category;
+  //   const updatedTotal = Number(editFormData.total) || 0;
+  //   const updatedSold = Number(editFormData.sold) || 0;
+  //   const updatedAvailable = updatedTotal - updatedSold;
+
+  //   const updatedData = {
+  //     name: editFormData.name,
+  //     price: Number(editFormData.price),
+  //     category: editFormData.category,
+  //     total: updatedTotal,
+  //     sold: updatedSold,
+  //     quantity: updatedAvailable, // This is the available stock
+  //   };
+
+  //   if (
+  //     !updatedData.name ||
+  //     !currentCategory ||
+  //     updatedData.price <= 0 ||
+  //     updatedTotal < updatedSold
+  //   ) {
+  //     setError(
+  //       "Invalid data for update. Total must be greater than or equal to Sold."
+  //     );
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     const itemRef = doc(
+  //       db,
+  //       getItemRefPath(currentCategory || "T-Shirt", itemId)
+  //     );
+  //     await updateDoc(itemRef, updatedData);
+  //     setEditingItemId(null);
+  //     setError(null);
+  //   } catch (err) {
+  //     console.error("Error updating document: ", err);
+  //     setError("Failed to update item.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const handleUpdateItem = async (itemId: string) => {
-    const currentCategory = editFormData.category;
+    const originalItem = inventory.find((item) => item.id === itemId);
+    if (!originalItem) {
+      setError("Item not found for update.");
+      return;
+    }
+
+    const originalCategory = originalItem.category;
+    const newCategory = editFormData.category;
     const updatedTotal = Number(editFormData.total) || 0;
     const updatedSold = Number(editFormData.sold) || 0;
     const updatedAvailable = updatedTotal - updatedSold;
 
     const updatedData = {
+      barcode: originalItem.barcode,
       name: editFormData.name,
       price: Number(editFormData.price),
       category: editFormData.category,
       total: updatedTotal,
       sold: updatedSold,
-      quantity: updatedAvailable, // This is the available stock
+      quantity: updatedAvailable,
+      createdAt: originalItem.createdAt || new Date().toISOString(),
     };
 
     if (
       !updatedData.name ||
-      !currentCategory ||
+      !newCategory ||
       updatedData.price <= 0 ||
       updatedTotal < updatedSold
     ) {
@@ -280,11 +332,20 @@ export default function InventoryPage() {
 
     try {
       setLoading(true);
-      const itemRef = doc(
-        db,
-        getItemRefPath(currentCategory || "T-Shirt", itemId)
-      );
-      await updateDoc(itemRef, updatedData);
+
+      // If category changed, delete old document and create new one
+      if (originalCategory !== newCategory) {
+        const oldItemRef = doc(db, getItemRefPath(originalCategory, itemId));
+        const newItemsCollectionPath = getItemRefPath(newCategory);
+
+        await deleteDoc(oldItemRef);
+        await addDoc(collection(db, newItemsCollectionPath), updatedData);
+      } else {
+        // Category didn't change, just update the existing document
+        const itemRef = doc(db, getItemRefPath(originalCategory, itemId));
+        await updateDoc(itemRef, updatedData);
+      }
+
       setEditingItemId(null);
       setError(null);
     } catch (err) {
