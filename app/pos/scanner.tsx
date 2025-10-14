@@ -40,7 +40,6 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#000",
       }}
     >
       <div

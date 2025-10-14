@@ -1,0 +1,103 @@
+.logoutContainer {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--grey);
+  background: none;
+  border: 2px solid var(--grey);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.logoutButton:hover {
+  color: var(--red);
+  background-color: var(--light-red);
+  border-color: var(--red);
+}
+
+.logoutText {
+  font-weight: 500;
+  display: none;
+}
+
+.mainContent {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.buttonGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+.cardButton {
+  background: var(--grey);
+  filter: brightness(1.09);
+  border: 4px solid transparent;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
+  transform: translateY(0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cardButton:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.inventoryButton:hover {
+  border-color: var(--blue);
+}
+
+.posButton:hover {
+  border-color: var(--yellow);
+}
+
+.iconBlue {
+  width: 3rem;
+  height: 3rem;
+  color: var(--blue);
+  margin-bottom: 1rem;
+  transition: color 0.3s;
+}
+
+.iconPurple {
+  width: 3rem;
+  height: 3rem;
+  color: var(--yellow);
+  margin-bottom: 1rem;
+  transition: color 0.3s;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.cardText {
+  font-size: 0.875rem;
+  color: var(--bg);
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .logoutText {
+    display: inline;
+  }
+  .buttonGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

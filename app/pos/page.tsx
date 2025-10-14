@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import styles from "@/app/styles.module.css";
 import BarcodeScanner from "./scanner";
 import { db } from "@/lib/firebase";
 import {
@@ -58,6 +57,24 @@ export default function POSPage() {
   const [showCart, setShowCart] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualBarcode, setManualBarcode] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const authStatus = localStorage.getItem("authenticated") === "true";
+      setIsAuthenticated(authStatus);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated === false) window.location.href = "/";
+  }, [isAuthenticated]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("authenticated");
+    localStorage.removeItem("accessCode");
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     if (db) {
@@ -202,136 +219,6 @@ export default function POSPage() {
   }, [cart]);
 
   // Generate Invoice PDF
-  // const generateInvoicePDF = () => {
-  //   if (cart.length === 0) return;
-
-  //   const invoiceDate = new Date().toLocaleString("en-GB", {
-  //     day: "2-digit",
-  //     month: "2-digit",
-  //     year: "numeric",
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //   });
-
-  //   const invoiceHTML = `
-  //     <!DOCTYPE html>
-  //     <html>
-  //     <head>
-  //       <meta charset="utf-8">
-  //       <title>Invoice</title>
-  //       <style>
-  //         body {
-  //           font-family: Arial, sans-serif;
-  //           padding: 40px;
-  //           max-width: 800px;
-  //           margin: 0 auto;
-  //         }
-  //         .header {
-  //           text-align: center;
-  //           margin-bottom: 30px;
-  //           border-bottom: 2px solid #3b82f6;
-  //           padding-bottom: 20px;
-  //         }
-  //         .header h1 {
-  //           margin: 0;
-  //         }
-  //         .invoice-info {
-  //           margin-bottom: 30px;
-  //         }
-  //         table {
-  //           width: 100%;
-  //           border-collapse: collapse;
-  //           margin-bottom: 30px;
-  //         }
-  //         th {
-  //           background-color: #3b82f6;
-  //           color: white;
-  //           padding: 12px;
-  //           text-align: left;
-  //           font-weight: bold;
-  //         }
-  //         td {
-  //           padding: 10px;
-  //           border-bottom: 1px solid #ddd;
-  //         }
-  //         .text-right {
-  //           text-align: right;
-  //         }
-  //         .total-row {
-  //           font-weight: bold;
-  //           font-size: 1.2em;
-  //           background-color: #f3f4f6;
-  //         }
-  //         .footer {
-  //           margin-top: 40px;
-  //           padding-top: 20px;
-  //           border-top: 1px solid #ddd;
-  //           color: #666;
-  //         }
-  //       </style>
-  //     </head>
-  //     <body>
-  //       <div class="header">
-  //         <img src="/BIGLOGO.svg" alt="Store Logo" style="background-color: #3b82f6; height: 60px; margin-bottom: 10px; padding: 1rem;" />
-  //         <h1>SALES INVOICE</h1>
-  //       </div>
-
-  //       <div class="invoice-info">
-  //         <p><strong>Date:</strong> ${invoiceDate}</p>
-  //         <p><strong>Invoice #:</strong> INV-${Date.now()}</p>
-  //       </div>
-
-  //       <table>
-  //         <thead>
-  //           <tr>
-  //             <th>Item</th>
-  //             <th>Price</th>
-  //             <th class="text-right">Quantity</th>
-  //             <th class="text-right">Subtotal</th>
-  //           </tr>
-  //         </thead>
-  //         <tbody>
-  //           ${cart
-  //             .map(
-  //               (item) => `
-  //             <tr>
-  //               <td>${item.name}</td>
-  //               <td>${item.price.toFixed(2)} EGP</td>
-  //               <td class="text-right">${item.cartQuantity}</td>
-  //               <td class="text-right">${item.subtotal.toFixed(2)} EGP</td>
-  //             </tr>
-  //           `
-  //             )
-  //             .join("")}
-  //           <tr class="total-row">
-  //             <td colspan="3" class="text-right">TOTAL:</td>
-  //             <td class="text-right">${cartTotal.toFixed(2)} EGP</td>
-  //           </tr>
-  //         </tbody>
-  //       </table>
-
-  //       <div class="footer">
-  //         <p>Terms and Conditions</p>
-  //         <p>Exchanges are allowed within 3 days of purchase.</p>
-  //         <p>Items must be returned in their original condition, unused, and with all tags and packaging intact.</p>
-  //         <p>No cash refunds are issued; exchanges only.</p>
-  //         <p>Thank you for shopping with us!</p>
-  //       </div>
-  //     </body>
-  //     </html>
-  //   `;
-
-  //   const printWindow = window.open("", "_blank");
-  //   if (printWindow) {
-  //     printWindow.document.write(invoiceHTML);
-  //     printWindow.document.close();
-  //     printWindow.focus();
-
-  //     printWindow.onload = () => {
-  //       printWindow.print();
-  //     };
-  //   }
-  // };
   const generateInvoicePDF = () => {
     if (cart.length === 0) return;
 
@@ -569,11 +456,20 @@ export default function POSPage() {
     }
   };
 
+  if (isAuthenticated === null) {
+    return (
+      <div className="loadingContainer">
+        <Loader2 className="loader" />
+        <p className="loadingText">Checking authentication status...</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className={styles.loadingContainer}>
-        <Loader2 className={styles.loader} />
-        <p className={styles.loadingText}>Loading POS inventory...</p>
+      <div className="loadingContainer">
+        <Loader2 className="loader" />
+        <p className="loadingText">Loading POS inventory...</p>
       </div>
     );
   }
@@ -967,7 +863,7 @@ export default function POSPage() {
               >
                 {checkoutStatus === "processing" ? (
                   <>
-                    <Loader2 style={{ animation: "spin 1s linear infinite" }} />{" "}
+                    <Loader2 className="loader" />
                     Processing...
                   </>
                 ) : (
@@ -1122,7 +1018,6 @@ export default function POSPage() {
   );
 }
 
-// Fullscreen Scanner Component
 function FullscreenScanner({
   onScan,
   onError,
@@ -1131,7 +1026,7 @@ function FullscreenScanner({
   onError: (msg: string) => void;
 }) {
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div className="page">
       <BarcodeScanner onScan={onScan} onError={onError} />
       <div
         style={{

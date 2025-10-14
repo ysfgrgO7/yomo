@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Package, Smartphone, LogOut, Loader2 } from "lucide-react";
-import styles from "@/app/styles.module.css";
+import styles from "./home.module.css";
 
 export default function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -26,15 +26,15 @@ export default function HomePage() {
 
   if (isAuthenticated === null) {
     return (
-      <div className={styles.loadingContainer}>
-        <Loader2 className={styles.loader} />
-        <p className={styles.loadingText}>Checking authentication status...</p>
+      <div className="loadingContainer">
+        <Loader2 className="loader" />
+        <p className="loadingText">Checking authentication status...</p>
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
+    <div className="page">
       <div className={styles.logoutContainer}>
         <button onClick={handleLogout} className={styles.logoutButton}>
           <LogOut className={styles.logoutIcon} />
@@ -43,14 +43,13 @@ export default function HomePage() {
       </div>
 
       <div className={styles.mainContent}>
-        <h1 className={styles.title}>Welcome to the Shop System</h1>
-        <p className={styles.subtitle}>
-          Please select the section you need to access.
-        </p>
+        <h1>Welcome to the Yomo Shop System</h1>
+        <p>Please select the section you need to access.</p>
+        <br />
 
         <div className={styles.buttonGrid}>
           <button
-            onClick={() => (window.location.href = "/home/inventory")}
+            onClick={() => (window.location.href = "/inventory")}
             className={`${styles.cardButton} ${styles.inventoryButton}`}
           >
             <Package className={styles.iconBlue} />
@@ -61,7 +60,7 @@ export default function HomePage() {
           </button>
 
           <button
-            onClick={() => (window.location.href = "/home/pos")}
+            onClick={() => (window.location.href = "/pos")}
             className={`${styles.cardButton} ${styles.posButton}`}
           >
             <Smartphone className={styles.iconPurple} />
