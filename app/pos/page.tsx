@@ -2,7 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import BarcodeScanner from "./scanner";
+import { FullscreenScanner } from "./FullscreenScanner";
+import { generateInvoicePDF } from "./invoice";
 import { db } from "@/lib/firebase";
 import {
   collectionGroup,
@@ -17,13 +18,12 @@ import {
   Minus,
   Plus,
   Trash2,
-  X,
   AlertTriangle,
   CreditCard,
-  DollarSign,
   Printer,
   Keyboard,
 } from "lucide-react";
+import style from "./pos.module.css";
 
 interface Item {
   id: string;
@@ -69,12 +69,6 @@ export default function POSPage() {
   useEffect(() => {
     if (isAuthenticated === false) window.location.href = "/";
   }, [isAuthenticated]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("authenticated");
-    localStorage.removeItem("accessCode");
-    window.location.href = "/";
-  };
 
   useEffect(() => {
     if (db) {
@@ -218,195 +212,6 @@ export default function POSPage() {
     return cart.reduce((total, item) => total + item.subtotal, 0);
   }, [cart]);
 
-  // Generate Invoice PDF
-  const generateInvoicePDF = () => {
-    if (cart.length === 0) return;
-
-    const invoiceDate = new Date().toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const invoiceNumber = `INV-${Date.now()}`;
-
-    const invoiceHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Invoice</title>
-      <style>
-        body {
-          font-family: "Segoe UI", Arial, sans-serif;
-          padding: 40px;
-          max-width: 800px;
-          margin: 0 auto;
-          background-color: #fff;
-          color: #333;
-        }
-        .header {
-          text-align: center;
-          margin-bottom: 40px;
-          border-bottom: 3px solid #3b82f6;
-          padding-bottom: 20px;
-        }
-        .logo {
-          height: 70px;
-          margin-bottom: 10px;
-          background-color: #3b82f6;
-          padding : 1rem;
-        }
-        .store-info {
-          text-align: center;
-          font-size: 0.9em;
-          color: #666;
-          margin-bottom: 10px;
-        }
-        .invoice-title {
-          font-size: 1.8em;
-          letter-spacing: 1px;
-          color: #3b82f6;
-          margin: 10px 0 0;
-        }
-        .invoice-info {
-          margin-top: 20px;
-          margin-bottom: 30px;
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.95em;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin-bottom: 30px;
-          border: 1px solid #ddd;
-        }
-        th {
-          background-color: #3b82f6;
-          color: white;
-          padding: 12px;
-          text-align: left;
-          font-weight: 600;
-        }
-        td {
-          padding: 10px;
-          border-bottom: 1px solid #ddd;
-        }
-        tbody tr:nth-child(even) {
-          background-color: #f9fafb;
-        }
-        .text-right {
-          text-align: right;
-        }
-        .total-box {
-          float: right;
-          width: 300px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          padding: 15px;
-          background-color: #f9fafb;
-        }
-        .total-box table {
-          width: 100%;
-          border: none;
-        }
-        .total-box td {
-          border: none;
-          padding: 6px 0;
-        }
-        .total-box .final {
-          font-weight: bold;
-          font-size: 1.1em;
-          color: #111;
-        }
-        .footer {
-          margin-top: 60px;
-          padding-top: 20px;
-          border-top: 1px solid #ddd;
-          font-size: 0.9em;
-          color: #555;
-          line-height: 1.6;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <img src="/BIGLOGO.svg" alt="Store Logo" class="logo" />
-        <h1 class="invoice-title">SALES INVOICE</h1>
-        <div class="store-info">
-          <p><strong>Yomo</strong> — Manshiyet el Bakri, Cairo</p>
-          <p>Phone: 0120 1675335 </p>
-        </div>
-      </div>
-      
-      <div class="invoice-info">
-        <p><strong>Invoice #:</strong> ${invoiceNumber}</p>
-        <p><strong>Date:</strong> ${invoiceDate}</p>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Price</th>
-            <th class="text-right">Qty</th>
-            <th class="text-right">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${cart
-            .map(
-              (item) => `
-            <tr>
-              <td>${item.name}</td>
-              <td>${item.price.toFixed(2)} EGP</td>
-              <td class="text-right">${item.cartQuantity}</td>
-              <td class="text-right">${item.subtotal.toFixed(2)} EGP</td>
-            </tr>
-          `
-            )
-            .join("")}
-        </tbody>
-      </table>
-
-      <div class="total-box">
-        <table>
-          <tr>
-            <td><strong>Subtotal:</strong></td>
-            <td class="text-right">${cartTotal.toFixed(2)} EGP</td>
-          </tr>
-          <tr class="final">
-            <td>Total Due:</td>
-            <td class="text-right">${cartTotal.toFixed(2)} EGP</td>
-          </tr>
-        </table>
-      </div>
-
-      <div class="footer">
-        <h3>Terms & Conditions</h3>
-        <p>Exchanges are allowed within 3 days of purchase.</p>
-        <p>Items must be returned in their original condition, unused, and with all tags and packaging intact.</p>
-        <p>No cash refunds are issued; exchanges only.</p>
-        <p style="margin-top: 10px;">Thank you for shopping with us!</p>
-      </div>
-    </body>
-    </html>
-  `;
-
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(invoiceHTML);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.onload = () => {
-        printWindow.print();
-      };
-    }
-  };
-
   const handleCheckout = async () => {
     if (cart.length === 0) {
       setError("Cart is empty. Please scan items.");
@@ -444,7 +249,8 @@ export default function POSPage() {
 
     if (results.every((r) => r === true)) {
       setCheckoutStatus("success");
-      generateInvoicePDF();
+      generateInvoicePDF(cart, cartTotal);
+
       setCart([]);
       setTimeout(() => setCheckoutStatus("idle"), 3000);
     } else {
@@ -500,143 +306,46 @@ export default function POSPage() {
       </div>
 
       {/* Floating Cart Button */}
-      <button
-        onClick={() => setShowCart(true)}
-        style={{
-          position: "fixed",
-          bottom: "2rem",
-          right: "2rem",
-          width: "70px",
-          height: "70px",
-          borderRadius: "50%",
-          backgroundColor: "#3b82f6",
-          color: "white",
-          border: "none",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-          zIndex: 999,
-        }}
-      >
-        <ShoppingCart size={28} />
-        {cart.length > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              top: "-5px",
-              right: "-5px",
-              backgroundColor: "#ef4444",
-              color: "white",
-              borderRadius: "50%",
-              width: "28px",
-              height: "28px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "14px",
-              fontWeight: "bold",
-            }}
-          >
-            {cart.length}
-          </span>
-        )}
-      </button>
-
-      {/* Floating Manual Entry Button */}
-      <button
-        onClick={() => setShowManualEntry(true)}
-        style={{
-          position: "fixed",
-          bottom: "2rem",
-          right: "7rem",
-          width: "70px",
-          height: "70px",
-          borderRadius: "50%",
-          backgroundColor: "#8b5cf6",
-          color: "white",
-          border: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-          zIndex: 999,
-        }}
-      >
-        <Keyboard size={28} />
-      </button>
+      <div className={style.buttonContainer}>
+        <button
+          onClick={() => setShowManualEntry(true)}
+          className={style.PosButton}
+          style={{ backgroundColor: "var(--yellow)" }}
+        >
+          <Keyboard size={28} />
+        </button>
+        <button
+          onClick={() => setShowCart(true)}
+          className={style.PosButton}
+          style={{ backgroundColor: "var(--blue)" }}
+        >
+          <ShoppingCart size={28} />
+          {cart.length > 0 && (
+            <span className={style.numberBadge}>{cart.length}</span>
+          )}
+        </button>
+      </div>
 
       {/* Error/Success Toast */}
       {error && (
-        <div
-          style={{
-            position: "fixed",
-            top: "2rem",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "#fee2e2",
-            color: "#b91c1c",
-            padding: "1rem 1.5rem",
-            borderRadius: "8px",
-            border: "1px solid #fca5a5",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            zIndex: 1000,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-          }}
-        >
+        <div className="error">
           <AlertTriangle size={20} /> {error}
         </div>
       )}
 
       {checkoutStatus === "success" && (
-        <div
-          style={{
-            position: "fixed",
-            top: "2rem",
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: "#d1fae5",
-            color: "#065f46",
-            padding: "1rem 1.5rem",
-            borderRadius: "8px",
-            border: "1px solid #34d399",
-            zIndex: 1000,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-            fontSize: "1.1rem",
-            fontWeight: "bold",
-          }}
-        >
+        <div className={style.transactionDoneMessage}>
           ✓ Transaction Complete!
         </div>
       )}
 
       {/* Cart Popup */}
       {showCart && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            padding: "1rem",
-          }}
-          onClick={() => setShowCart(false)}
-        >
+        <div className={style.popup} onClick={() => setShowCart(false)}>
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: "white",
+              backgroundColor: "var(--bg)",
               borderRadius: "12px",
               maxWidth: "600px",
               width: "100%",
@@ -651,11 +360,12 @@ export default function POSPage() {
             <div
               style={{
                 padding: "1.5rem",
-                borderBottom: "1px solid #e5e7eb",
+                borderBottom: "1px solid var(--grey)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: "#f9fafb",
+                color: "var(--fg)",
+                backgroundColor: "var(--bg)",
               }}
             >
               <h2
@@ -668,95 +378,31 @@ export default function POSPage() {
               >
                 <ShoppingCart /> Cart ({cart.length})
               </h2>
-              <button
-                onClick={() => setShowCart(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0.5rem",
-                }}
-              >
-                <X size={24} />
-              </button>
             </div>
 
             {/* Cart Items */}
             <div style={{ flexGrow: 1, overflowY: "auto", padding: "1rem" }}>
               {cart.length === 0 ? (
-                <p
-                  style={{
-                    textAlign: "center",
-                    padding: "2rem",
-                    color: "#666",
-                  }}
-                >
-                  Cart is empty. Scan items to begin.
-                </p>
+                <p>Cart is empty. Scan items to begin.</p>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.75rem",
-                  }}
-                >
+                <div>
                   {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: "8px",
-                        padding: "1rem",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
+                    <div key={item.id} className={style.cartitemsContainer}>
                       <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontWeight: "bold",
-                            marginBottom: "0.25rem",
-                          }}
-                        >
-                          {item.name}
-                        </div>
-                        <div style={{ fontSize: "0.9rem", color: "#666" }}>
-                          {item.price.toFixed(2)} EGP each
-                        </div>
+                        <h4>
+                          <b>{item.name}</b>
+                        </h4>
+                        <p>{item.price.toFixed(2)} EGP each</p>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                          }}
-                        >
+                      <div className={style.cartAction}>
+                        <div className={style.cartAction}>
                           <button
                             onClick={() => updateCartQuantity(item.id, -1)}
                             disabled={checkoutStatus === "processing"}
-                            style={{
-                              width: "32px",
-                              height: "32px",
-                              borderRadius: "50%",
-                              border: "none",
-                              backgroundColor: "#ef4444",
-                              color: "white",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
+                            style={{ backgroundColor: "var(--red)" }}
+                            className={style.cartactionButton}
                           >
-                            <Minus size={16} />
+                            <Minus size={18} />
                           </button>
                           <span
                             style={{
@@ -773,20 +419,10 @@ export default function POSPage() {
                               checkoutStatus === "processing" ||
                               item.cartQuantity >= item.quantity
                             }
-                            style={{
-                              width: "32px",
-                              height: "32px",
-                              borderRadius: "50%",
-                              border: "none",
-                              backgroundColor: "#10b981",
-                              color: "white",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
+                            style={{ backgroundColor: "var(--green)" }}
+                            className={style.cartactionButton}
                           >
-                            <Plus size={16} />
+                            <Plus size={18} />
                           </button>
                         </div>
                         <div
@@ -801,13 +437,8 @@ export default function POSPage() {
                         <button
                           onClick={() => removeItemFromCart(item.id)}
                           disabled={checkoutStatus === "processing"}
-                          style={{
-                            padding: "0.5rem",
-                            border: "none",
-                            backgroundColor: "#f3f4f6",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                          }}
+                          style={{ backgroundColor: "var(--grey)" }}
+                          className={style.cartactionButton}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -819,24 +450,15 @@ export default function POSPage() {
             </div>
 
             {/* Footer - Total and Checkout */}
-            <div
-              style={{
-                padding: "1.5rem",
-                borderTop: "1px solid #e5e7eb",
-                backgroundColor: "#f9fafb",
-              }}
-            >
+            <div style={{ padding: "1.5rem" }}>
               <div
                 style={{
                   display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: "1.5rem",
-                  fontWeight: "bold",
-                  marginBottom: "1rem",
+                  alignItems: "flex-end",
+                  gap: "0.5rem",
                 }}
               >
-                <span>Total:</span>
-                <span>{cartTotal.toFixed(2)} EGP</span>
+                <h2>Total:</h2> <h3>{cartTotal.toFixed(2)} EGP</h3>
               </div>
               <button
                 onClick={handleCheckout}
@@ -847,9 +469,9 @@ export default function POSPage() {
                   fontSize: "1.1rem",
                   backgroundColor:
                     checkoutStatus === "processing" || cart.length === 0
-                      ? "#9ca3af"
-                      : "#10b981",
-                  color: "white",
+                      ? "var(--grey)"
+                      : "var(--green)",
+                  color: cart.length === 0 ? "var(--bg)" : "var(--fg)",
                   border: "none",
                   borderRadius: "8px",
                   cursor: cart.length === 0 ? "not-allowed" : "pointer",
@@ -874,14 +496,15 @@ export default function POSPage() {
               </button>
 
               <button
-                onClick={generateInvoicePDF}
+                onClick={() => generateInvoicePDF(cart, cartTotal)}
                 disabled={cart.length === 0}
                 style={{
                   width: "100%",
                   padding: "0.75rem",
                   fontSize: "1rem",
-                  backgroundColor: cart.length === 0 ? "#e5e7eb" : "#3b82f6",
-                  color: cart.length === 0 ? "#9ca3af" : "white",
+                  backgroundColor:
+                    cart.length === 0 ? "var(--grey)" : "var(--blue)",
+                  color: cart.length === 0 ? "var(--bg)" : "var(--fg)",
                   border: "none",
                   borderRadius: "8px",
                   cursor: cart.length === 0 ? "not-allowed" : "pointer",
@@ -901,26 +524,12 @@ export default function POSPage() {
 
       {/* Manual Entry Popup */}
       {showManualEntry && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-            padding: "1rem",
-          }}
-          onClick={() => setShowManualEntry(false)}
-        >
+        <div className={style.popup} onClick={() => setShowManualEntry(false)}>
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              backgroundColor: "white",
+              color: "var(--fg)",
+              backgroundColor: "var(--bg)",
               borderRadius: "12px",
               maxWidth: "400px",
               width: "100%",
@@ -946,32 +555,11 @@ export default function POSPage() {
               >
                 <Keyboard /> Manual Entry
               </h2>
-              <button
-                onClick={() => setShowManualEntry(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "0.5rem",
-                }}
-              >
-                <X size={24} />
-              </button>
             </div>
 
             <form onSubmit={handleManualEntry}>
               <div style={{ marginBottom: "1rem" }}>
-                <label
-                  htmlFor="barcode-input"
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "bold",
-                    color: "#374151",
-                  }}
-                >
-                  Enter Barcode/QR Code:
-                </label>
+                <label htmlFor="barcode-input">Enter Barcode/QR Code:</label>
                 <input
                   id="barcode-input"
                   type="text"
@@ -979,17 +567,6 @@ export default function POSPage() {
                   onChange={(e) => setManualBarcode(e.target.value)}
                   autoFocus
                   placeholder="Type or paste code here"
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    fontSize: "1rem",
-                    border: "2px solid #d1d5db",
-                    borderRadius: "8px",
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => (e.target.style.borderColor = "#3b82f6")}
-                  onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
                 />
               </div>
 
@@ -1000,7 +577,9 @@ export default function POSPage() {
                   width: "100%",
                   padding: "0.75rem",
                   fontSize: "1rem",
-                  backgroundColor: manualBarcode.trim() ? "#10b981" : "#9ca3af",
+                  backgroundColor: manualBarcode.trim()
+                    ? "var(--green)"
+                    : "var(--grey)",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1014,39 +593,6 @@ export default function POSPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function FullscreenScanner({
-  onScan,
-  onError,
-}: {
-  onScan: (code: string) => void;
-  onError: (msg: string) => void;
-}) {
-  return (
-    <div className="page">
-      <BarcodeScanner onScan={onScan} onError={onError} />
-      <div
-        style={{
-          position: "absolute",
-          top: "2rem",
-          left: "50%",
-          transform: "translateX(-50%)",
-          backgroundColor: "rgba(0,0,0,0.7)",
-          color: "white",
-          padding: "1rem 2rem",
-          borderRadius: "8px",
-          fontSize: "1.2rem",
-          fontWeight: "bold",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-        }}
-      >
-        <DollarSign size={24} /> Point of Sale - Scan Items
-      </div>
     </div>
   );
 }

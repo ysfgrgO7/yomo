@@ -1,11 +1,11 @@
 :root {
-  --bg: #f1f3f4;
-  --fg: #202124;
+  --bg: #202124;
+  --fg: #f1f3f4;
   --grey: #9aa0a6;
   --blue: #174ea6;
   --green: #0d652d;
-  --red: #a50e0e;
   --yellow: #fbbc04;
+  --red: #a50e0e;
   --light-red: #fad2cf;
 }
 
@@ -113,13 +113,17 @@ label {
   font-weight: 500;
 }
 .error {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: var(--light-red);
   color: var(--red);
   border: 2px solid var(--red);
   padding: 10px;
   border-radius: 10px;
-  margin-top: 10px;
   text-align: center;
+  z-index: 1000;
 }
 
 .page {

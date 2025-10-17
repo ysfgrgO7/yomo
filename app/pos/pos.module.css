@@ -1,0 +1,90 @@
+.buttonContainer {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 999;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+.PosButton {
+  width: 70px;
+  height: 70px;
+  border-radius: 100%;
+  color: var(--bg);
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.numberBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: var(--red); /* Assuming --red is defined elsewhere */
+  color: var(--fg); /* Assuming --fg is defined elsewhere (foreground color) */
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.transactionDoneMessage {
+  position: fixed;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #d1fae5; /* Light mint green */
+  color: #065f46; /* Dark green text */
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #34d399; /* Medium green border */
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black backdrop */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.cartactionButton {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.cartAction {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.cartitemsContainer {
+  border: 1px solid var(--grey);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
