@@ -39,7 +39,7 @@
 }
 
 .cardButton {
-  background: var(--grey);
+  background: var(--bg);
   filter: brightness(1.09);
   border: 4px solid transparent;
   border-radius: 1rem;
@@ -50,11 +50,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.cardButton:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .inventoryButton:hover {
@@ -89,7 +84,7 @@
 
 .cardText {
   font-size: 0.875rem;
-  color: var(--bg);
+  color: var(--grey);
   text-align: center;
 }
 

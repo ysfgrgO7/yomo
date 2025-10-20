@@ -58,6 +58,7 @@ export default function POSPage() {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualBarcode, setManualBarcode] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isRefundMode, setIsRefundMode] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -127,7 +128,8 @@ export default function POSPage() {
       return;
     }
 
-    if (itemToAdd.quantity <= 0) {
+    // In refund mode, we don't check stock
+    if (!isRefundMode && itemToAdd.quantity <= 0) {
       setError(`"${itemToAdd.name}" is out of stock!`);
       setTimeout(() => setError(null), 2000);
       return;
@@ -142,7 +144,8 @@ export default function POSPage() {
         const updatedCart = [...prevCart];
         const currentCartQty = updatedCart[existingItemIndex].cartQuantity;
 
-        if (currentCartQty + 1 > itemToAdd.quantity) {
+        // Only check stock limit in normal sale mode
+        if (!isRefundMode && currentCartQty + 1 > itemToAdd.quantity) {
           setError(
             `Only ${itemToAdd.quantity} of "${itemToAdd.name}" available.`
           );
@@ -182,7 +185,8 @@ export default function POSPage() {
               return null;
             }
 
-            if (newQuantity > itemInInventory.quantity) {
+            // Only check stock in normal mode
+            if (!isRefundMode && newQuantity > itemInInventory.quantity) {
               setError(
                 `Cannot add more. Only ${itemInInventory.quantity} available.`
               );
@@ -227,17 +231,33 @@ export default function POSPage() {
         const itemRef = doc(db, getItemRefPath(cartItem.category, cartItem.id));
         const currentItem = inventory.find((i) => i.id === cartItem.id);
 
-        if (!currentItem || currentItem.quantity < cartItem.cartQuantity) {
-          throw new Error(`Insufficient stock for ${cartItem.name}.`);
+        if (!currentItem) {
+          throw new Error(`Item ${cartItem.name} not found.`);
         }
 
-        const newSold = currentItem.sold + cartItem.cartQuantity;
-        const newAvailable = currentItem.total - newSold;
+        if (isRefundMode) {
+          // Refund: Add back to inventory
+          const newSold = Math.max(0, currentItem.sold - cartItem.cartQuantity);
+          const newAvailable = currentItem.total - newSold;
 
-        await updateDoc(itemRef, {
-          sold: newSold,
-          quantity: newAvailable,
-        });
+          await updateDoc(itemRef, {
+            sold: newSold,
+            quantity: newAvailable,
+          });
+        } else {
+          // Sale: Deduct from inventory
+          if (currentItem.quantity < cartItem.cartQuantity) {
+            throw new Error(`Insufficient stock for ${cartItem.name}.`);
+          }
+
+          const newSold = currentItem.sold + cartItem.cartQuantity;
+          const newAvailable = currentItem.total - newSold;
+
+          await updateDoc(itemRef, {
+            sold: newSold,
+            quantity: newAvailable,
+          });
+        }
         return true;
       } catch (e) {
         console.error("Failed to update stock:", e);
@@ -249,14 +269,19 @@ export default function POSPage() {
 
     if (results.every((r) => r === true)) {
       setCheckoutStatus("success");
-      generateInvoicePDF(cart, cartTotal);
+
+      // Generate invoice for both sales and refunds
+      generateInvoicePDF(cart, cartTotal, isRefundMode);
 
       setCart([]);
+      setIsRefundMode(false);
       setTimeout(() => setCheckoutStatus("idle"), 3000);
     } else {
       setCheckoutStatus("failure");
       setError(
-        "Checkout failed for one or more items. Inventory was not fully updated."
+        `${
+          isRefundMode ? "Refund" : "Checkout"
+        } failed for one or more items. Inventory was not fully updated.`
       );
       setTimeout(() => setCheckoutStatus("idle"), 5000);
     }
@@ -317,7 +342,9 @@ export default function POSPage() {
         <button
           onClick={() => setShowCart(true)}
           className={style.PosButton}
-          style={{ backgroundColor: "var(--blue)" }}
+          style={{
+            backgroundColor: isRefundMode ? "var(--red)" : "var(--blue)",
+          }}
         >
           <ShoppingCart size={28} />
           {cart.length > 0 && (
@@ -335,7 +362,7 @@ export default function POSPage() {
 
       {checkoutStatus === "success" && (
         <div className={style.transactionDoneMessage}>
-          ✓ Transaction Complete!
+          ✓ {isRefundMode ? "Refund" : "Transaction"} Complete!
         </div>
       )}
 
@@ -376,8 +403,28 @@ export default function POSPage() {
                   gap: "0.5rem",
                 }}
               >
-                <ShoppingCart /> Cart ({cart.length})
+                <ShoppingCart /> {isRefundMode ? "Refund" : "Cart"} (
+                {cart.length})
               </h2>
+              <button
+                onClick={() => {
+                  setIsRefundMode(!isRefundMode);
+                }}
+                style={{
+                  padding: "0.5rem 1rem",
+                  backgroundColor: isRefundMode
+                    ? "var(--yellow)"
+                    : "var(--red)",
+                  color: "var(--fg)",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {isRefundMode ? "Switch to Sale" : "Refund Mode"}
+              </button>
             </div>
 
             {/* Cart Items */}
@@ -417,7 +464,8 @@ export default function POSPage() {
                             onClick={() => updateCartQuantity(item.id, 1)}
                             disabled={
                               checkoutStatus === "processing" ||
-                              item.cartQuantity >= item.quantity
+                              (!isRefundMode &&
+                                item.cartQuantity >= item.quantity)
                             }
                             style={{ backgroundColor: "var(--green)" }}
                             className={style.cartactionButton}
@@ -451,6 +499,21 @@ export default function POSPage() {
 
             {/* Footer - Total and Checkout */}
             <div style={{ padding: "1.5rem" }}>
+              {isRefundMode && (
+                <div
+                  style={{
+                    backgroundColor: "var(--yellow)",
+                    color: "var(--bg)",
+                    padding: "0.75rem",
+                    borderRadius: "6px",
+                    marginBottom: "1rem",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  ⚠️ REFUND MODE ACTIVE
+                </div>
+              )}
               <div
                 style={{
                   display: "flex",
@@ -458,7 +521,11 @@ export default function POSPage() {
                   gap: "0.5rem",
                 }}
               >
-                <h2>Total:</h2> <h3>{cartTotal.toFixed(2)} EGP</h3>
+                <h2>Total:</h2>{" "}
+                <h3>
+                  {isRefundMode ? "-" : ""}
+                  {cartTotal.toFixed(2)} EGP
+                </h3>
               </div>
               <button
                 onClick={handleCheckout}
@@ -470,6 +537,8 @@ export default function POSPage() {
                   backgroundColor:
                     checkoutStatus === "processing" || cart.length === 0
                       ? "var(--grey)"
+                      : isRefundMode
+                      ? "var(--red)"
                       : "var(--green)",
                   color: cart.length === 0 ? "var(--bg)" : "var(--fg)",
                   border: "none",
@@ -487,6 +556,10 @@ export default function POSPage() {
                   <>
                     <Loader2 className="loader" />
                     Processing...
+                  </>
+                ) : isRefundMode ? (
+                  <>
+                    <CreditCard /> Process Refund
                   </>
                 ) : (
                   <>

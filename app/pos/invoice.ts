@@ -8,7 +8,11 @@ export interface CartItem {
   subtotal: number;
 }
 
-export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
+export function generateInvoicePDF(
+  cart: CartItem[],
+  cartTotal: number,
+  isRefund: boolean = false
+) {
   if (cart.length === 0) return;
 
   const invoiceDate = new Date().toLocaleString("en-GB", {
@@ -19,14 +23,16 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
     minute: "2-digit",
   });
 
-  const invoiceNumber = `INV-${Date.now()}`;
+  const invoiceNumber = `${isRefund ? "REF" : "INV"}-${Date.now()}`;
+  const documentTitle = isRefund ? "REFUND RECEIPT" : "SALES INVOICE";
+  const headerColor = isRefund ? "#ef4444" : "#3b82f6";
 
   const invoiceHTML = `
   <!DOCTYPE html>
   <html>
   <head>
     <meta charset="utf-8">
-    <title>Invoice</title>
+    <title>${isRefund ? "Refund" : "Invoice"}</title>
     <style>
       body {
         font-family: "Segoe UI", Arial, sans-serif;
@@ -39,13 +45,13 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
       .header {
         text-align: center;
         margin-bottom: 40px;
-        border-bottom: 3px solid #3b82f6;
+        border-bottom: 3px solid ${headerColor};
         padding-bottom: 20px;
       }
       .logo {
         height: 70px;
         margin-bottom: 10px;
-        background-color: #3b82f6;
+        background-color: ${headerColor};
         padding: 1rem;
       }
       .store-info {
@@ -57,7 +63,7 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
       .invoice-title {
         font-size: 1.8em;
         letter-spacing: 1px;
-        color: #3b82f6;
+        color: ${headerColor};
         margin: 10px 0 0;
       }
       .invoice-info {
@@ -67,6 +73,22 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
         justify-content: space-between;
         font-size: 0.95em;
       }
+      ${
+        isRefund
+          ? `
+      .refund-notice {
+        background-color: #fef3c7;
+        border: 2px solid #f59e0b;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+        color: #92400e;
+      }
+      `
+          : ""
+      }
       table {
         width: 100%;
         border-collapse: collapse;
@@ -74,7 +96,7 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
         border: 1px solid #ddd;
       }
       th {
-        background-color: #3b82f6;
+        background-color: ${headerColor};
         color: white;
         padding: 12px;
         text-align: left;
@@ -124,15 +146,27 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
   <body>
     <div class="header">
       <img src="/BIGLOGO.svg" alt="Store Logo" class="logo" />
-      <h1 class="invoice-title">SALES INVOICE</h1>
+      <h1 class="invoice-title">${documentTitle}</h1>
       <div class="store-info">
         <p><strong>Yomo</strong> — Manshiyet el Bakri, Cairo</p>
         <p>Phone: 0120 1675335 </p>
       </div>
     </div>
     
+    ${
+      isRefund
+        ? `
+    <div class="refund-notice">
+      ⚠️ THIS IS A REFUND TRANSACTION
+    </div>
+    `
+        : ""
+    }
+    
     <div class="invoice-info">
-      <p><strong>Invoice #:</strong> ${invoiceNumber}</p>
+      <p><strong>${
+        isRefund ? "Refund" : "Invoice"
+      } #:</strong> ${invoiceNumber}</p>
       <p><strong>Date:</strong> ${invoiceDate}</p>
     </div>
 
@@ -151,9 +185,11 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
             (item) => `
           <tr>
             <td>${item.name}</td>
-            <td>${item.price.toFixed(2)} EGP</td>
+            <td>${isRefund ? "-" : ""}${item.price.toFixed(2)} EGP</td>
             <td class="text-right">${item.cartQuantity}</td>
-            <td class="text-right">${item.subtotal.toFixed(2)} EGP</td>
+            <td class="text-right">${
+              isRefund ? "-" : ""
+            }${item.subtotal.toFixed(2)} EGP</td>
           </tr>
         `
           )
@@ -165,20 +201,33 @@ export function generateInvoicePDF(cart: CartItem[], cartTotal: number) {
       <table>
         <tr>
           <td><strong>Subtotal:</strong></td>
-          <td class="text-right">${cartTotal.toFixed(2)} EGP</td>
+          <td class="text-right">${isRefund ? "-" : ""}${cartTotal.toFixed(
+    2
+  )} EGP</td>
         </tr>
         <tr class="final">
-          <td>Total Due:</td>
-          <td class="text-right">${cartTotal.toFixed(2)} EGP</td>
+          <td>${isRefund ? "Refund Amount:" : "Total Due:"}</td>
+          <td class="text-right">${isRefund ? "-" : ""}${cartTotal.toFixed(
+    2
+  )} EGP</td>
         </tr>
       </table>
     </div>
 
     <div class="footer">
       <h3>Terms & Conditions</h3>
+      ${
+        isRefund
+          ? `
+      <p>This refund has been processed and the items have been returned to inventory.</p>
+      <p>Please retain this receipt for your records.</p>
+      `
+          : `
       <p>Exchanges are allowed within 3 days of purchase.</p>
       <p>Items must be returned in their original condition, unused, and with all tags and packaging intact.</p>
       <p>No cash refunds are issued; exchanges only.</p>
+      `
+      }
       <p style="margin-top: 10px;">Thank you for shopping with us!</p>
     </div>
   </body>

@@ -618,7 +618,13 @@ export default function InventoryPage() {
                     <td className={styles.td}>{item.quantity}</td>
                     <td className={styles.td}>{item.category}</td>
                     <td className={styles.td}>
-                      <div style={{ display: "flex", gap: "5px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "5px",
+                          justifyContent: "center",
+                        }}
+                      >
                         <button
                           onClick={() => handleGenerateItemPdf(item)}
                           disabled={generatingPdfFor === item.id}
