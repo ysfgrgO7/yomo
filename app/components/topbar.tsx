@@ -8,15 +8,23 @@ import React, { useState, useRef, useEffect } from "react";
 import { Package, Smartphone, Home } from "lucide-react";
 
 export default function Topbar({}) {
-  const handleLogout = () => {
-    localStorage.removeItem("authenticated");
-    localStorage.removeItem("accessCode");
-    window.location.href = "/";
-  };
-
+  const [isClient, setIsClient] = useState(false);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+
+  // Ensure we're on the client before doing anything with localStorage
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authenticated");
+      localStorage.removeItem("accessCode");
+      window.location.href = "/";
+    }
+  };
 
   // Close dropdown if clicked outside
   useEffect(() => {
@@ -29,6 +37,32 @@ export default function Topbar({}) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Don't render anything until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className={styles.topbarContainer}>
+        <div style={{ display: "flex" }} ref={menuRef}>
+          <img
+            src="/BIGLOGO.svg"
+            alt="LOGO"
+            draggable={false}
+            style={{
+              margin: "8px",
+              padding: "10px",
+              borderRadius: "10px",
+              backgroundColor: "var(--blue)",
+              cursor: "pointer",
+            }}
+          />
+        </div>
+        <button className={styles.logoutButton}>
+          <LogOut className={styles.logoutIcon} />
+          <span className={styles.logoutText}>Logout</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.topbarContainer}>
       <div style={{ display: "flex" }} ref={menuRef}>
@@ -36,30 +70,41 @@ export default function Topbar({}) {
           src="/BIGLOGO.svg"
           onClick={() => setOpen((prev) => !prev)}
           alt="LOGO"
+          draggable={false}
           style={{
             margin: "8px",
             padding: "10px",
             borderRadius: "10px",
             backgroundColor: "var(--blue)",
+            cursor: "pointer",
           }}
         />
         <div className={styles.dropdown}>
           {open && (
             <div className={styles.menu}>
               <ul className={styles.links}>
-                <li className={pathname === "/home" ? styles.active : ""}>
+                <li
+                  className={pathname === "/home" ? styles.active : ""}
+                  onClick={() => setOpen((prev) => !prev)}
+                >
                   <Link href="/home">
                     <Home className={styles.icon} />
                     <span>Home</span>
                   </Link>
                 </li>
-                <li className={pathname === "/inventory" ? styles.active : ""}>
+                <li
+                  className={pathname === "/inventory" ? styles.active : ""}
+                  onClick={() => setOpen((prev) => !prev)}
+                >
                   <Link href="/inventory">
                     <Package className={styles.icon} />
                     <span>Inventory</span>
                   </Link>
                 </li>
-                <li className={pathname === "/pos" ? styles.active : ""}>
+                <li
+                  className={pathname === "/pos" ? styles.active : ""}
+                  onClick={() => setOpen((prev) => !prev)}
+                >
                   <Link href="/pos">
                     <Smartphone className={styles.icon} />
                     <span>POS</span>

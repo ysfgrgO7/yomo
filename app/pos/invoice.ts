@@ -1,6 +1,17 @@
 // app/pos/utils/invoice.ts
 
-export interface CartItem {
+export interface Item {
+  id: string;
+  barcode: string;
+  name: string;
+  price: number;
+  category: string;
+  quantity: number;
+  total: number;
+  sold: number;
+}
+
+export interface CartItem extends Item {
   id: string;
   name: string;
   price: number;

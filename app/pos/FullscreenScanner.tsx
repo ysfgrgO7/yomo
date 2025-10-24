@@ -4,8 +4,6 @@
 import React from "react";
 import { Scanner, IDetectedBarcode } from "@yudiel/react-qr-scanner";
 
-import { DollarSign } from "lucide-react";
-
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
   onError: (error: string) => void;
@@ -65,8 +63,10 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
           allowMultiple={false}
           scanDelay={200}
           components={{
-            finder: true,
-            onOff: false,
+            onOff: true, // Show camera on/off button
+            torch: true, // Show torch/flashlight button (if supported)
+            zoom: true, // Show zoom control (if supported)
+            finder: true, // Show finder overlay
           }}
           styles={{
             container: {
@@ -95,25 +95,6 @@ export function FullscreenScanner({
   return (
     <div className="page">
       <BarcodeScanner onScan={onScan} onError={onError} />
-      <div
-        style={{
-          position: "absolute",
-          top: "2rem",
-          left: "50%",
-          transform: "translateX(-50%)",
-          backgroundColor: "rgba(0,0,0,0.7)",
-          color: "white",
-          padding: "1rem 2rem",
-          borderRadius: "8px",
-          fontSize: "1.2rem",
-          fontWeight: "bold",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-        }}
-      >
-        <DollarSign size={24} /> Point of Sale - Scan Items
-      </div>
     </div>
   );
 }

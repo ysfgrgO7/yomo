@@ -251,49 +251,6 @@ export default function InventoryPage() {
     });
   };
 
-  // const handleUpdateItem = async (itemId: string) => {
-  //   const currentCategory = editFormData.category;
-  //   const updatedTotal = Number(editFormData.total) || 0;
-  //   const updatedSold = Number(editFormData.sold) || 0;
-  //   const updatedAvailable = updatedTotal - updatedSold;
-
-  //   const updatedData = {
-  //     name: editFormData.name,
-  //     price: Number(editFormData.price),
-  //     category: editFormData.category,
-  //     total: updatedTotal,
-  //     sold: updatedSold,
-  //     quantity: updatedAvailable, // This is the available stock
-  //   };
-
-  //   if (
-  //     !updatedData.name ||
-  //     !currentCategory ||
-  //     updatedData.price <= 0 ||
-  //     updatedTotal < updatedSold
-  //   ) {
-  //     setError(
-  //       "Invalid data for update. Total must be greater than or equal to Sold."
-  //     );
-  //     return;
-  //   }
-
-  //   try {
-  //     setLoading(true);
-  //     const itemRef = doc(
-  //       db,
-  //       getItemRefPath(currentCategory || "T-Shirt", itemId)
-  //     );
-  //     await updateDoc(itemRef, updatedData);
-  //     setEditingItemId(null);
-  //     setError(null);
-  //   } catch (err) {
-  //     console.error("Error updating document: ", err);
-  //     setError("Failed to update item.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
   const handleUpdateItem = async (itemId: string) => {
     const originalItem = inventory.find((item) => item.id === itemId);
     if (!originalItem) {
@@ -526,146 +483,148 @@ export default function InventoryPage() {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      <table className={styles.table}>
-        <thead className={styles.thead}>
-          <tr>
-            <th className={styles.th}>Name</th>
-            <th className={styles.th}>Price</th>
-            <th className={styles.th}>Total Stock</th>
-            <th className={styles.th}>Sold</th>
-            <th className={styles.th}>Available Stock</th>
-            <th className={styles.th}>Category</th>
-            <th className={styles.th}>Actions</th>
-          </tr>
-        </thead>
-        <tbody className={styles.tbody}>
-          {filteredInventory.length > 0 ? (
-            filteredInventory.map((item) => (
-              <tr key={item.id}>
-                {editingItemId === item.id ? (
-                  <>
-                    <td className={styles.td}>
-                      <input
-                        name="name"
-                        value={editFormData.name || ""}
-                        onChange={handleEditChange}
-                      />
-                    </td>
-                    <td className={styles.td}>
-                      <input
-                        name="price"
-                        type="number"
-                        value={editFormData.price?.toString() || ""}
-                        onChange={handleEditChange}
-                      />
-                    </td>
-                    <td className={styles.td}>
-                      <input
-                        name="total"
-                        type="number"
-                        value={editFormData.total?.toString() || ""}
-                        onChange={handleEditChange}
-                      />
-                    </td>
-                    <td className={styles.td}>
-                      <input
-                        name="sold"
-                        type="number"
-                        value={editFormData.sold?.toString() || ""}
-                        onChange={handleEditChange}
-                      />
-                    </td>
-                    <td className={styles.td}>
-                      <p style={{ color: "white" }}>
-                        {(Number(editFormData.total) || 0) -
-                          (Number(editFormData.sold) || 0)}
-                      </p>
-                    </td>
-                    <td className={styles.td}>
-                      <select
-                        name="category"
-                        value={editFormData.category || ""}
-                        onChange={handleEditChange}
-                      >
-                        {CATEGORIES.map((c) => (
-                          <option key={c}>{c}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className={styles.td}>
-                      <div style={{ display: "flex", gap: "5px" }}>
-                        <button
-                          style={{ backgroundColor: "var(--green)" }}
-                          onClick={() => handleUpdateItem(item.id)}
-                        >
-                          <Check />
-                        </button>
-                        <button
-                          style={{ backgroundColor: "var(--red)" }}
-                          onClick={() => setEditingItemId(null)}
-                        >
-                          <X />
-                        </button>
-                      </div>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className={styles.td}>{item.name}</td>
-                    <td className={styles.td}>{item.price.toFixed(2)} EGP</td>
-                    <td className={styles.td}>{item.total}</td>
-                    <td className={styles.td}>{item.sold}</td>
-                    <td className={styles.td}>{item.quantity}</td>
-                    <td className={styles.td}>{item.category}</td>
-                    <td className={styles.td}>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "5px",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <button
-                          onClick={() => handleGenerateItemPdf(item)}
-                          disabled={generatingPdfFor === item.id}
-                          title={`Download ${item.quantity} QR code stickers`}
-                          style={{ backgroundColor: "var(--green)" }}
-                        >
-                          {generatingPdfFor === item.id ? (
-                            <>Processing...</>
-                          ) : (
-                            <Download />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => startEditing(item)}
-                          title="Edit item"
-                          style={{ backgroundColor: "var(--blue)" }}
-                        >
-                          <Edit />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          title="Delete item"
-                          style={{ backgroundColor: "var(--red)" }}
-                        >
-                          <Trash2 />
-                        </button>
-                      </div>
-                    </td>
-                  </>
-                )}
-              </tr>
-            ))
-          ) : (
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead className={styles.thead}>
             <tr>
-              <td className={styles.td} colSpan={8}>
-                No items found.
-              </td>
+              <th className={styles.th}>Name</th>
+              <th className={styles.th}>Price</th>
+              <th className={styles.th}>Total Stock</th>
+              <th className={styles.th}>Sold</th>
+              <th className={styles.th}>Available Stock</th>
+              <th className={styles.th}>Category</th>
+              <th className={styles.th}>Actions</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className={styles.tbody}>
+            {filteredInventory.length > 0 ? (
+              filteredInventory.map((item) => (
+                <tr key={item.id}>
+                  {editingItemId === item.id ? (
+                    <>
+                      <td className={styles.td}>
+                        <input
+                          name="name"
+                          value={editFormData.name || ""}
+                          onChange={handleEditChange}
+                        />
+                      </td>
+                      <td className={styles.td}>
+                        <input
+                          name="price"
+                          type="number"
+                          value={editFormData.price?.toString() || ""}
+                          onChange={handleEditChange}
+                        />
+                      </td>
+                      <td className={styles.td}>
+                        <input
+                          name="total"
+                          type="number"
+                          value={editFormData.total?.toString() || ""}
+                          onChange={handleEditChange}
+                        />
+                      </td>
+                      <td className={styles.td}>
+                        <input
+                          name="sold"
+                          type="number"
+                          value={editFormData.sold?.toString() || ""}
+                          onChange={handleEditChange}
+                        />
+                      </td>
+                      <td className={styles.td}>
+                        <p style={{ color: "white" }}>
+                          {(Number(editFormData.total) || 0) -
+                            (Number(editFormData.sold) || 0)}
+                        </p>
+                      </td>
+                      <td className={styles.td}>
+                        <select
+                          name="category"
+                          value={editFormData.category || ""}
+                          onChange={handleEditChange}
+                        >
+                          {CATEGORIES.map((c) => (
+                            <option key={c}>{c}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className={styles.td}>
+                        <div style={{ display: "flex", gap: "5px" }}>
+                          <button
+                            style={{ backgroundColor: "var(--green)" }}
+                            onClick={() => handleUpdateItem(item.id)}
+                          >
+                            <Check />
+                          </button>
+                          <button
+                            style={{ backgroundColor: "var(--red)" }}
+                            onClick={() => setEditingItemId(null)}
+                          >
+                            <X />
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className={styles.td}>{item.name}</td>
+                      <td className={styles.td}>{item.price.toFixed(2)} EGP</td>
+                      <td className={styles.td}>{item.total}</td>
+                      <td className={styles.td}>{item.sold}</td>
+                      <td className={styles.td}>{item.quantity}</td>
+                      <td className={styles.td}>{item.category}</td>
+                      <td className={styles.td}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "5px",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <button
+                            onClick={() => handleGenerateItemPdf(item)}
+                            disabled={generatingPdfFor === item.id}
+                            title={`Download ${item.quantity} QR code stickers`}
+                            style={{ backgroundColor: "var(--green)" }}
+                          >
+                            {generatingPdfFor === item.id ? (
+                              <>Processing...</>
+                            ) : (
+                              <Download />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => startEditing(item)}
+                            title="Edit item"
+                            style={{ backgroundColor: "var(--blue)" }}
+                          >
+                            <Edit />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteItem(item.id)}
+                            title="Delete item"
+                            style={{ backgroundColor: "var(--red)" }}
+                          >
+                            <Trash2 />
+                          </button>
+                        </div>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td className={styles.td} colSpan={8}>
+                  No items found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

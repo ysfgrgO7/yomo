@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { FullscreenScanner } from "./FullscreenScanner";
-import { generateInvoicePDF } from "./invoice";
+import { generateInvoicePDF, CartItem, Item } from "./invoice";
 import { db } from "@/lib/firebase";
 import {
   collectionGroup,
@@ -25,22 +25,6 @@ import {
 } from "lucide-react";
 import style from "./pos.module.css";
 
-interface Item {
-  id: string;
-  barcode: string;
-  name: string;
-  price: number;
-  category: string;
-  quantity: number;
-  total: number;
-  sold: number;
-}
-
-interface CartItem extends Item {
-  cartQuantity: number;
-  subtotal: number;
-}
-
 const getItemRefPath = (category: string, id?: string) => {
   const path = `inventory/${category}/items`;
   return id ? `${path}/${id}` : path;
@@ -59,6 +43,15 @@ export default function POSPage() {
   const [manualBarcode, setManualBarcode] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isRefundMode, setIsRefundMode] = useState(false);
+
+  // Check if all items in cart have sales (can be refunded)
+  const canEnableRefundMode = useMemo(() => {
+    if (cart.length === 0) return false; // Disable if cart is empty
+    return cart.every((cartItem) => {
+      const inventoryItem = inventory.find((i) => i.id === cartItem.id);
+      return inventoryItem && inventoryItem.sold >= cartItem.cartQuantity;
+    });
+  }, [cart, inventory]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -128,11 +121,21 @@ export default function POSPage() {
       return;
     }
 
-    // In refund mode, we don't check stock
-    if (!isRefundMode && itemToAdd.quantity <= 0) {
-      setError(`"${itemToAdd.name}" is out of stock!`);
-      setTimeout(() => setError(null), 2000);
-      return;
+    // Validate based on mode
+    if (isRefundMode) {
+      // Refund mode: Check if item has sales to refund
+      if (itemToAdd.sold <= 0) {
+        setError(`Cannot refund "${itemToAdd.name}". No units were sold yet.`);
+        setTimeout(() => setError(null), 2000);
+        return;
+      }
+    } else {
+      // Sale mode: Check if item is in stock
+      if (itemToAdd.quantity <= 0) {
+        setError(`"${itemToAdd.name}" is out of stock!`);
+        setTimeout(() => setError(null), 2000);
+        return;
+      }
     }
 
     setCart((prevCart) => {
@@ -141,24 +144,29 @@ export default function POSPage() {
       );
 
       if (existingItemIndex > -1) {
+        // Item already in cart - update quantity
         const updatedCart = [...prevCart];
         const currentCartQty = updatedCart[existingItemIndex].cartQuantity;
+        const newQuantity = currentCartQty + 1;
 
-        // Only check stock limit in normal sale mode
-        if (!isRefundMode && currentCartQty + 1 > itemToAdd.quantity) {
+        // Check limits based on mode
+        const limit = isRefundMode ? itemToAdd.sold : itemToAdd.quantity;
+        if (newQuantity > limit) {
           setError(
-            `Only ${itemToAdd.quantity} of "${itemToAdd.name}" available.`
+            `Only ${limit} of "${itemToAdd.name}" ${
+              isRefundMode ? "were sold (refund limit)" : "available"
+            }.`
           );
           setTimeout(() => setError(null), 2000);
           return prevCart;
         }
 
-        updatedCart[existingItemIndex].cartQuantity += 1;
+        updatedCart[existingItemIndex].cartQuantity = newQuantity;
         updatedCart[existingItemIndex].subtotal =
-          updatedCart[existingItemIndex].cartQuantity *
-          updatedCart[existingItemIndex].price;
+          newQuantity * updatedCart[existingItemIndex].price;
         return updatedCart;
       } else {
+        // New item - add to cart
         const newItem: CartItem = {
           ...itemToAdd,
           cartQuantity: 1,
@@ -181,14 +189,23 @@ export default function POSPage() {
           if (item.id === itemId) {
             const newQuantity = item.cartQuantity + change;
 
+            // Remove if quantity drops below 1
             if (newQuantity < 1) {
               return null;
             }
 
-            // Only check stock in normal mode
-            if (!isRefundMode && newQuantity > itemInInventory.quantity) {
+            // Check limits based on mode
+            const limit = isRefundMode
+              ? itemInInventory.sold
+              : itemInInventory.quantity;
+
+            if (newQuantity > limit) {
               setError(
-                `Cannot add more. Only ${itemInInventory.quantity} available.`
+                `Cannot ${
+                  isRefundMode ? "refund" : "add"
+                } more. Only ${limit} ${
+                  isRefundMode ? "were sold" : "available"
+                }.`
               );
               setTimeout(() => setError(null), 2000);
               return item;
@@ -236,8 +253,14 @@ export default function POSPage() {
         }
 
         if (isRefundMode) {
-          // Refund: Add back to inventory
-          const newSold = Math.max(0, currentItem.sold - cartItem.cartQuantity);
+          // Refund: Validate and add back to inventory
+          if (cartItem.cartQuantity > currentItem.sold) {
+            throw new Error(
+              `Cannot refund ${cartItem.cartQuantity} of ${cartItem.name}. Only ${currentItem.sold} were sold.`
+            );
+          }
+
+          const newSold = currentItem.sold - cartItem.cartQuantity;
           const newAvailable = currentItem.total - newSold;
 
           await updateDoc(itemRef, {
@@ -245,7 +268,7 @@ export default function POSPage() {
             quantity: newAvailable,
           });
         } else {
-          // Sale: Deduct from inventory
+          // Sale: Validate and deduct from inventory
           if (currentItem.quantity < cartItem.cartQuantity) {
             throw new Error(`Insufficient stock for ${cartItem.name}.`);
           }
@@ -401,19 +424,40 @@ export default function POSPage() {
               </h2>
               <button
                 onClick={() => {
+                  if (!isRefundMode && !canEnableRefundMode) {
+                    if (cart.length === 0) {
+                      setError(
+                        "Add items to cart before switching to refund mode."
+                      );
+                    } else {
+                      setError(
+                        "Cannot switch to refund mode. Some items in cart have no sales."
+                      );
+                    }
+                    setTimeout(() => setError(null), 3000);
+                    return;
+                  }
                   setIsRefundMode(!isRefundMode);
                 }}
+                disabled={!isRefundMode && !canEnableRefundMode}
                 style={{
                   padding: "0.5rem 1rem",
-                  backgroundColor: isRefundMode
-                    ? "var(--yellow)"
-                    : "var(--red)",
+                  backgroundColor:
+                    !isRefundMode && !canEnableRefundMode
+                      ? "var(--bg)"
+                      : isRefundMode
+                      ? "var(--yellow)"
+                      : "var(--red)",
                   color: "var(--fg)",
                   border: "none",
                   borderRadius: "6px",
-                  cursor: "pointer",
+                  cursor:
+                    !isRefundMode && !canEnableRefundMode
+                      ? "not-allowed"
+                      : "pointer",
                   fontWeight: "bold",
                   fontSize: "0.9rem",
+                  opacity: !isRefundMode && !canEnableRefundMode ? 0.5 : 1,
                 }}
               >
                 {isRefundMode ? "Switch to Sale" : "Refund Mode"}
@@ -457,8 +501,9 @@ export default function POSPage() {
                             onClick={() => updateCartQuantity(item.id, 1)}
                             disabled={
                               checkoutStatus === "processing" ||
-                              (!isRefundMode &&
-                                item.cartQuantity >= item.quantity)
+                              (isRefundMode
+                                ? item.cartQuantity >= item.sold
+                                : item.cartQuantity >= item.quantity)
                             }
                             style={{ backgroundColor: "var(--green)" }}
                             className={style.cartactionButton}
@@ -478,7 +523,7 @@ export default function POSPage() {
                         <button
                           onClick={() => removeItemFromCart(item.id)}
                           disabled={checkoutStatus === "processing"}
-                          style={{ backgroundColor: "var(--grey)" }}
+                          style={{ backgroundColor: "var(--red)" }}
                           className={style.cartactionButton}
                         >
                           <Trash2 size={18} />

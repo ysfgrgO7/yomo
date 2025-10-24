@@ -53,3 +53,43 @@
 .td:nth-child(4) {
   text-align: right;
 }
+
+/* === Scrollable Wrapper === */
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: var(--fg);
+  -webkit-overflow-scrolling: touch;
+  background-color: transparent;
+}
+
+/* Make sure the table keeps its full width */
+
+/* Optional: custom scrollbar */
+.tableContainer::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tableContainer::-webkit-scrollbar-thumb {
+  background-color: var(--grey);
+  border-radius: 10px;
+}
+
+.tableContainer::-webkit-scrollbar-track {
+  background-color: var(--fg);
+}
+
+/* === Mobile tweaks === */
+@media (max-width: 768px) {
+  .tableContainer {
+    margin-top: 1rem;
+  }
+
+  .th,
+  .td {
+    font-size: 0.85rem;
+    padding: 0.6rem 0.8rem;
+    white-space: nowrap; /* prevent wrapping of text */
+  }
+}
