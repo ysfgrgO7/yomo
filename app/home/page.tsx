@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Package, Smartphone, LogOut, Loader2 } from "lucide-react";
+import { Package, Smartphone, Loader2 } from "lucide-react";
 import styles from "./home.module.css";
 
 export default function HomePage() {
@@ -18,12 +18,6 @@ export default function HomePage() {
     if (isAuthenticated === false) window.location.href = "/";
   }, [isAuthenticated]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("authenticated");
-    localStorage.removeItem("accessCode");
-    window.location.href = "/";
-  };
-
   if (isAuthenticated === null) {
     return (
       <div className="loadingContainer">
@@ -35,13 +29,6 @@ export default function HomePage() {
 
   return (
     <div className="page">
-      <div className={styles.logoutContainer}>
-        <button onClick={handleLogout} className={styles.logoutButton}>
-          <LogOut className={styles.logoutIcon} />
-          <span className={styles.logoutText}>Logout</span>
-        </button>
-      </div>
-
       <div className={styles.mainContent}>
         <h1>Welcome to the Yomo Shop System</h1>
         <p>Please select the section you need to access.</p>
