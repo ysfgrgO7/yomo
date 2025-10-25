@@ -66,6 +66,8 @@
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+
+  animation: fade 0.2s ease-in-out forwards;
 }
 
 .cartactionButton {
@@ -87,4 +89,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.scannerContainer {
+  max-width: 40%;
+}
+
+@media (max-width: 768px) {
+  .scannerContainer {
+    min-width: 100%;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }

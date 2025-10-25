@@ -127,7 +127,7 @@ label {
 }
 
 .page {
-  margin-top: 70px;
+  margin-top: 10vh;
   min-height: 100vh;
   background-color: transparent;
   display: flex;
@@ -168,5 +168,21 @@ label {
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    margin-top: 0;
+    padding: 1rem;
   }
 }

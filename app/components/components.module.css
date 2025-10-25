@@ -108,7 +108,7 @@
   z-index: 100;
   overflow: hidden;
   opacity: 0; /* start hidden so animation runs */
-  animation: fadeIn 0.15s ease-in-out forwards;
+  animation: slideOut 0.2s ease-in-out forwards;
   animation-fill-mode: forwards;
 }
 
@@ -126,20 +126,31 @@
 }
 
 /* ✅ Fixed animation */
-@keyframes fadeIn {
+@keyframes slideOut {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateX(-100px) translateY(-50%);
   }
   to {
     opacity: 1;
+    transform: translateY(-50%);
   }
 }
 
 @media (max-width: 768px) {
+  @keyframes slideOut {
+    from {
+      opacity: 0;
+      transform: translateY(-30px) translateX(-50%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
   .menu {
     position: absolute;
-    top: 70px; /* px added */
+    top: 80px; /* px added */
     left: 50%;
     transform: translateX(-50%) translateY(0); /* center horizontally */
     background-color: var(--bg);
@@ -150,6 +161,6 @@
     z-index: 100;
     overflow: hidden;
     opacity: 0;
-    animation: fadeIn 0.15s ease-in-out forwards;
+    animation: slideOut 0.2s ease-in-out forwards;
   }
 }

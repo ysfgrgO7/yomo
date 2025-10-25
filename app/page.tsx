@@ -78,7 +78,11 @@ function LoginForm({
 
         {error && <div className="error">{error}</div>}
 
-        <button type="submit" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ backgroundColor: "var(--blue)" }}
+        >
           {loading ? "Verifying..." : "Login"}
         </button>
       </form>

@@ -330,16 +330,7 @@ export default function POSPage() {
 
   return (
     <div className="page">
-      {/* Fullscreen Camera */}
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "absolute",
-          top: 0,
-          left: 0,
-        }}
-      >
+      <div className={style.scannerContainer}>
         <FullscreenScanner
           onScan={handleScan}
           onError={(msg) => setError(msg)}
