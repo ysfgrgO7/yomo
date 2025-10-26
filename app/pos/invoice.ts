@@ -1,28 +1,55 @@
-// app/pos/utils/invoice.ts
+// app/pos/invoice.ts
 
-export interface Item {
-  id: string;
-  barcode: string;
-  name: string;
-  price: number;
-  category: string;
-  quantity: number;
-  total: number;
-  sold: number;
-}
+import { CartItem, Invoice, InvoiceItem } from "./types";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
-export interface CartItem extends Item {
-  id: string;
-  name: string;
-  price: number;
-  cartQuantity: number;
-  subtotal: number;
+export async function saveInvoiceToFirebase(
+  cart: CartItem[],
+  cartTotal: number,
+  isRefund: boolean = false
+): Promise<string> {
+  const timestamp = Date.now();
+  const invoiceNumber = `${isRefund ? "REF" : "INV"}-${timestamp}`;
+  const date = new Date().toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const items: InvoiceItem[] = cart.map((item) => ({
+    name: item.name,
+    price: item.price,
+    quantity: item.cartQuantity,
+    total: item.subtotal,
+  }));
+
+  const invoice: Invoice = {
+    invoiceNumber,
+    date,
+    timestamp,
+    items,
+    subtotal: cartTotal,
+    isRefund,
+  };
+
+  try {
+    const invoicesCollection = collection(db, "invoices");
+    await addDoc(invoicesCollection, invoice);
+    return invoiceNumber;
+  } catch (error) {
+    console.error("Error saving invoice:", error);
+    throw error;
+  }
 }
 
 export function generateInvoicePDF(
   cart: CartItem[],
   cartTotal: number,
-  isRefund: boolean = false
+  isRefund: boolean = false,
+  invoiceNumber?: string
 ) {
   if (cart.length === 0) return;
 
@@ -34,7 +61,8 @@ export function generateInvoicePDF(
     minute: "2-digit",
   });
 
-  const invoiceNumber = `${isRefund ? "REF" : "INV"}-${Date.now()}`;
+  const invoiceRef =
+    invoiceNumber || `${isRefund ? "REF" : "INV"}-${Date.now()}`;
   const documentTitle = isRefund ? "REFUND RECEIPT" : "SALES INVOICE";
   const headerColor = isRefund ? "#ef4444" : "#3b82f6";
 
@@ -163,7 +191,7 @@ export function generateInvoicePDF(
         <p>Phone: 0120 1675335 </p>
       </div>
     </div>
-    
+
     ${
       isRefund
         ? `
@@ -173,11 +201,11 @@ export function generateInvoicePDF(
     `
         : ""
     }
-    
+
     <div class="invoice-info">
       <p><strong>${
         isRefund ? "Refund" : "Invoice"
-      } #:</strong> ${invoiceNumber}</p>
+      } #:</strong> ${invoiceRef}</p>
       <p><strong>Date:</strong> ${invoiceDate}</p>
     </div>
 

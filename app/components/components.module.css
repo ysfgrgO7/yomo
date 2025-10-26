@@ -148,14 +148,22 @@
       transform: translateX(-50%) translateY(0);
     }
   }
+
+  .dropdown {
+    position: absolute;
+
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
   .menu {
     position: absolute;
-    top: 80px; /* px added */
+    top: 80px;
     left: 50%;
-    transform: translateX(-50%) translateY(0); /* center horizontally */
+    transform: translateX(-50%);
     background-color: var(--bg);
     border: 1px solid var(--grey);
-    min-width: 150px;
+    min-width: fit-content;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
     z-index: 100;

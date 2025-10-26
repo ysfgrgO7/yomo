@@ -5,7 +5,7 @@ import styles from "./components.module.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
-import { Package, Smartphone, Home } from "lucide-react";
+import { Package, Smartphone, Home, Receipt } from "lucide-react";
 
 export default function Topbar({}) {
   const [isClient, setIsClient] = useState(false);
@@ -108,6 +108,16 @@ export default function Topbar({}) {
                   <Link href="/pos">
                     <Smartphone className={styles.icon} />
                     <span>POS</span>
+                  </Link>
+                </li>
+
+                <li
+                  className={pathname === "/invoices" ? styles.active : ""}
+                  onClick={() => setOpen((prev) => !prev)}
+                >
+                  <Link href="/invoices">
+                    <Receipt className={styles.icon} />
+                    <span>Invoices</span>
                   </Link>
                 </li>
               </ul>

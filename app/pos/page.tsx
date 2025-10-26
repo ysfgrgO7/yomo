@@ -3,7 +3,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { FullscreenScanner } from "./FullscreenScanner";
-import { generateInvoicePDF, CartItem, Item } from "./invoice";
 import { db } from "@/lib/firebase";
 import {
   collectionGroup,
@@ -24,20 +23,15 @@ import {
   Keyboard,
 } from "lucide-react";
 import style from "./pos.module.css";
-
-const getItemRefPath = (category: string, id?: string) => {
-  const path = `inventory/${category}/items`;
-  return id ? `${path}/${id}` : path;
-};
+import { Item, CartItem, CheckoutStatus, getItemRefPath } from "./types";
+import { generateInvoicePDF, saveInvoiceToFirebase } from "./invoice";
 
 export default function POSPage() {
   const [inventory, setInventory] = useState<Item[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [checkoutStatus, setCheckoutStatus] = useState<
-    "idle" | "processing" | "success" | "failure"
-  >("idle");
+  const [checkoutStatus, setCheckoutStatus] = useState<CheckoutStatus>("idle");
   const [showCart, setShowCart] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualBarcode, setManualBarcode] = useState("");
@@ -243,68 +237,90 @@ export default function POSPage() {
     setCheckoutStatus("processing");
     setError(null);
 
-    const updates = cart.map(async (cartItem) => {
-      try {
-        const itemRef = doc(db, getItemRefPath(cartItem.category, cartItem.id));
-        const currentItem = inventory.find((i) => i.id === cartItem.id);
+    try {
+      // First, save the invoice to Firebase and get the invoice number
+      const invoiceNumber = await saveInvoiceToFirebase(
+        cart,
+        cartTotal,
+        isRefundMode
+      );
 
-        if (!currentItem) {
-          throw new Error(`Item ${cartItem.name} not found.`);
-        }
+      // Then update the inventory
+      const updates = cart.map(async (cartItem) => {
+        try {
+          const itemRef = doc(
+            db,
+            getItemRefPath(cartItem.category, cartItem.id)
+          );
+          const currentItem = inventory.find((i) => i.id === cartItem.id);
 
-        if (isRefundMode) {
-          // Refund: Validate and add back to inventory
-          if (cartItem.cartQuantity > currentItem.sold) {
-            throw new Error(
-              `Cannot refund ${cartItem.cartQuantity} of ${cartItem.name}. Only ${currentItem.sold} were sold.`
-            );
+          if (!currentItem) {
+            throw new Error(`Item ${cartItem.name} not found.`);
           }
 
-          const newSold = currentItem.sold - cartItem.cartQuantity;
-          const newAvailable = currentItem.total - newSold;
+          if (isRefundMode) {
+            // Refund: Validate and add back to inventory
+            if (cartItem.cartQuantity > currentItem.sold) {
+              throw new Error(
+                `Cannot refund ${cartItem.cartQuantity} of ${cartItem.name}. Only ${currentItem.sold} were sold.`
+              );
+            }
 
-          await updateDoc(itemRef, {
-            sold: newSold,
-            quantity: newAvailable,
-          });
-        } else {
-          // Sale: Validate and deduct from inventory
-          if (currentItem.quantity < cartItem.cartQuantity) {
-            throw new Error(`Insufficient stock for ${cartItem.name}.`);
+            const newSold = currentItem.sold - cartItem.cartQuantity;
+            const newAvailable = currentItem.total - newSold;
+
+            await updateDoc(itemRef, {
+              sold: newSold,
+              quantity: newAvailable,
+            });
+          } else {
+            // Sale: Validate and deduct from inventory
+            if (currentItem.quantity < cartItem.cartQuantity) {
+              throw new Error(`Insufficient stock for ${cartItem.name}.`);
+            }
+
+            const newSold = currentItem.sold + cartItem.cartQuantity;
+            const newAvailable = currentItem.total - newSold;
+
+            await updateDoc(itemRef, {
+              sold: newSold,
+              quantity: newAvailable,
+            });
           }
-
-          const newSold = currentItem.sold + cartItem.cartQuantity;
-          const newAvailable = currentItem.total - newSold;
-
-          await updateDoc(itemRef, {
-            sold: newSold,
-            quantity: newAvailable,
-          });
+          return true;
+        } catch (e) {
+          console.error("Failed to update stock:", e);
+          return false;
         }
-        return true;
-      } catch (e) {
-        console.error("Failed to update stock:", e);
-        return false;
+      });
+
+      const results = await Promise.all(updates);
+
+      if (results.every((r) => r === true)) {
+        setCheckoutStatus("success");
+
+        // Generate invoice PDF with the saved invoice number
+        generateInvoicePDF(cart, cartTotal, isRefundMode, invoiceNumber);
+
+        setCart([]);
+        setIsRefundMode(false);
+        setTimeout(() => setCheckoutStatus("idle"), 3000);
+      } else {
+        setCheckoutStatus("failure");
+        setError(
+          `${
+            isRefundMode ? "Refund" : "Checkout"
+          } failed for one or more items. Inventory was not fully updated.`
+        );
+        setTimeout(() => setCheckoutStatus("idle"), 5000);
       }
-    });
-
-    const results = await Promise.all(updates);
-
-    if (results.every((r) => r === true)) {
-      setCheckoutStatus("success");
-
-      // Generate invoice for both sales and refunds
-      generateInvoicePDF(cart, cartTotal, isRefundMode);
-
-      setCart([]);
-      setIsRefundMode(false);
-      setTimeout(() => setCheckoutStatus("idle"), 3000);
-    } else {
+    } catch (error) {
+      console.error("Checkout error:", error);
       setCheckoutStatus("failure");
       setError(
-        `${
-          isRefundMode ? "Refund" : "Checkout"
-        } failed for one or more items. Inventory was not fully updated.`
+        `Failed to ${
+          isRefundMode ? "process refund" : "complete checkout"
+        }. Please try again.`
       );
       setTimeout(() => setCheckoutStatus("idle"), 5000);
     }
