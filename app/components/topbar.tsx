@@ -77,6 +77,7 @@ export default function Topbar({}) {
             borderRadius: "10px",
             backgroundColor: "var(--blue)",
             cursor: "pointer",
+            width: "fit-content",
           }}
         />
         <div className={styles.dropdown}>
