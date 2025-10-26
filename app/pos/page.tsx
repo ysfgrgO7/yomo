@@ -698,7 +698,7 @@ export default function POSPage() {
                   backgroundColor: manualBarcode.trim()
                     ? "var(--green)"
                     : "var(--grey)",
-                  color: "white",
+                  color: "var(--fg)",
                   border: "none",
                   borderRadius: "8px",
                   cursor: manualBarcode.trim() ? "pointer" : "not-allowed",

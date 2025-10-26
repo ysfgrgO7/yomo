@@ -39,7 +39,7 @@
 .tbody tr:hover {
   background-color: var(--fg);
   filter: brightness(0.8);
-  color: white;
+  color: var(--fg);
 }
 
 .tbody tr:last-child td {

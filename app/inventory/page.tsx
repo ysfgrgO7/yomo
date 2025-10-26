@@ -534,7 +534,7 @@ export default function InventoryPage() {
                         />
                       </td>
                       <td className={styles.td}>
-                        <p style={{ color: "white" }}>
+                        <p style={{ color: "var(--fg)" }}>
                           {(Number(editFormData.total) || 0) -
                             (Number(editFormData.sold) || 0)}
                         </p>
