@@ -222,4 +222,8 @@
     width: 100%;
     justify-content: center;
   }
+
+  .header {
+    margin-top: 80px;
+  }
 }
