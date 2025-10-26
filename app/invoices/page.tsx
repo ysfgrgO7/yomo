@@ -189,6 +189,9 @@ export default function InvoicesPage() {
                   {invoice.isRefund && (
                     <span className={styles.refundBadge}>REFUND</span>
                   )}
+                  {!invoice.isRefund && (
+                    <span className={styles.saleBadge}>SALE</span>
+                  )}
                 </div>
                 <p className={styles.date}>{invoice.date}</p>
                 <p className={styles.amount}>
@@ -216,7 +219,7 @@ export default function InvoicesPage() {
               <button
                 onClick={() => handleDownloadInvoice(invoice)}
                 className={`${styles.downloadBtn} ${
-                  invoice.isRefund ? styles.red : styles.green
+                  invoice.isRefund ? styles.red : styles.blue
                 }`}
               >
                 <Download size={18} /> Download PDF

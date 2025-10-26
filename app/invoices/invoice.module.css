@@ -159,6 +159,15 @@
   font-weight: bold;
 }
 
+.saleBadge {
+  padding: 0.25rem 0.75rem;
+  background-color: var(--blue);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
 .date {
   opacity: 0.7;
   margin: 0.25rem 0;
@@ -200,6 +209,9 @@
 
 .red {
   background-color: var(--red);
+}
+.blue {
+  background-color: var(--blue);
 }
 
 /* 📱 Mobile Responsiveness */
