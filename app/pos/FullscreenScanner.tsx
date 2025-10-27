@@ -35,7 +35,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onError }) => {
       onError={handleError}
       formats={["qr_code"]}
       allowMultiple={false}
-      scanDelay={200}
+      scanDelay={50}
       components={{
         onOff: false, // Show camera on/off button
         torch: true, // Show torch/flashlight button (if supported)

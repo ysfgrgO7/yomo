@@ -14,16 +14,7 @@ import {
   collectionGroup,
 } from "firebase/firestore";
 import { signInWithCustomToken } from "firebase/auth";
-import {
-  Package,
-  X,
-  Check,
-  Edit,
-  Trash2,
-  Plus,
-  Loader2,
-  Download,
-} from "lucide-react";
+import { Package, X, Check, Edit, Trash2, Plus, Download } from "lucide-react";
 import { generateItemQRCodesPdf, generateAllQRCodesPdf } from "./qrCode";
 import { Item } from "./qrCode";
 
@@ -77,19 +68,6 @@ export default function InventoryPage() {
     const path = `inventory/${category}/items`;
     return id ? `${path}/${id}` : path;
   };
-
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const authStatus = localStorage.getItem("authenticated") === "true";
-      setIsAuthenticated(authStatus);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated === false) window.location.href = "/";
-  }, [isAuthenticated]);
 
   useEffect(() => {
     const initialAuthToken =
@@ -353,17 +331,6 @@ export default function InventoryPage() {
         item.category.toLowerCase().includes(term)
     );
   }, [inventory, searchTerm]);
-
-  if (!isAuthReady || loading) {
-    return (
-      <div className="loadingContainer">
-        <Loader2 className="loader" />
-        <p className="loadingText">
-          {loading ? "Processing..." : "Loading inventory..."}
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="page">

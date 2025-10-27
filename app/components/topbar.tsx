@@ -71,14 +71,7 @@ export default function Topbar({}) {
           onClick={() => setOpen((prev) => !prev)}
           alt="LOGO"
           draggable={false}
-          style={{
-            margin: "8px",
-            padding: "10px",
-            borderRadius: "10px",
-            backgroundColor: "var(--blue)",
-            cursor: "pointer",
-            width: "fit-content",
-          }}
+          className={styles.logo}
         />
         <div className={styles.dropdown}>
           {open && (

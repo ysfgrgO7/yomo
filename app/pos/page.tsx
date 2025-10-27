@@ -35,7 +35,6 @@ export default function POSPage() {
   const [showCart, setShowCart] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualBarcode, setManualBarcode] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isRefundMode, setIsRefundMode] = useState(false);
 
   // Check if all items in cart have sales (can be refunded)
@@ -46,17 +45,6 @@ export default function POSPage() {
       return inventoryItem && inventoryItem.sold >= cartItem.cartQuantity;
     });
   }, [cart, inventory]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const authStatus = localStorage.getItem("authenticated") === "true";
-      setIsAuthenticated(authStatus);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated === false) window.location.href = "/";
-  }, [isAuthenticated]);
 
   useEffect(() => {
     if (db) {
@@ -325,15 +313,6 @@ export default function POSPage() {
       setTimeout(() => setCheckoutStatus("idle"), 5000);
     }
   };
-
-  if (isAuthenticated === null) {
-    return (
-      <div className="loadingContainer">
-        <Loader2 className="loader" />
-        <p className="loadingText">Checking authentication status...</p>
-      </div>
-    );
-  }
 
   if (loading) {
     return (

@@ -16,6 +16,15 @@
   border: solid 1px var(--grey);
 }
 
+.logo {
+  margin: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: var(--blue);
+  cursor: pointer;
+  width: fit-content;
+}
+
 .logoutButton {
   display: flex;
   align-items: center;

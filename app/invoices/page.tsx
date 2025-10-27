@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { Download, Loader2, Receipt } from "lucide-react";
+import { Download, Receipt } from "lucide-react";
 import { Invoice } from "../pos/types";
 import { generateInvoicePDF } from "../pos/invoice";
 import styles from "./invoice.module.css";
@@ -12,22 +12,10 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<(Invoice & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [filter, setFilter] = useState<"all" | "sales" | "refunds">("all");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const authStatus = localStorage.getItem("authenticated") === "true";
-      setIsAuthenticated(authStatus);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated === false) window.location.href = "/";
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (db && isAuthenticated) {
+    if (db) {
       setLoading(true);
       const invoicesCollection = collection(db, "invoices");
       const q = query(invoicesCollection, orderBy("timestamp", "desc"));
@@ -54,7 +42,7 @@ export default function InvoicesPage() {
 
       return () => unsubscribe();
     }
-  }, [isAuthenticated]);
+  }, []);
 
   const handleDownloadInvoice = (invoice: Invoice) => {
     const cartItems = invoice.items.map((item, index) => ({
@@ -91,15 +79,6 @@ export default function InvoicesPage() {
   const totalRefunds = invoices
     .filter((inv) => inv.isRefund)
     .reduce((sum, inv) => sum + inv.subtotal, 0);
-
-  if (isAuthenticated === null || loading) {
-    return (
-      <div className={styles.loaderContainer}>
-        <Loader2 className={styles.loader} size={48} />
-        <p>Loading invoices...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="page">
