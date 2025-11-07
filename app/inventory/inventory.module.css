@@ -65,6 +65,18 @@
 }
 
 /* Make sure the table keeps its full width */
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.4rem;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 5px;
+  color: var(--fg);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
 
 /* Optional: custom scrollbar */
 .tableContainer::-webkit-scrollbar {

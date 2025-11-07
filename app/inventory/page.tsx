@@ -545,9 +545,9 @@ export default function InventoryPage() {
                       <td className={styles.td}>
                         <div
                           style={{
-                            display: "flex",
+                            display: "grid",
+                            gridTemplateColumns: "auto auto",
                             gap: "5px",
-                            justifyContent: "center",
                           }}
                         >
                           <button
@@ -555,6 +555,7 @@ export default function InventoryPage() {
                             disabled={generatingPdfFor === item.id}
                             title={`Download ${item.quantity} QR code stickers`}
                             style={{ backgroundColor: "var(--green)" }}
+                            className={styles.actionButton}
                           >
                             {generatingPdfFor === item.id ? (
                               <>Processing...</>
@@ -566,6 +567,7 @@ export default function InventoryPage() {
                             onClick={() => startEditing(item)}
                             title="Edit item"
                             style={{ backgroundColor: "var(--blue)" }}
+                            className={styles.actionButton}
                           >
                             <Edit />
                           </button>
@@ -573,6 +575,7 @@ export default function InventoryPage() {
                             onClick={() => handleDeleteItem(item.id)}
                             title="Delete item"
                             style={{ backgroundColor: "var(--red)" }}
+                            className={styles.actionButton}
                           >
                             <Trash2 />
                           </button>
